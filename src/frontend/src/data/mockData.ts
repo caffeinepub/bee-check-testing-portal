@@ -554,7 +554,7 @@ export const mockFinancials = [
 
 export const mockOfficialPerformance = [
   {
-    user: "U1 - Anil Sharma",
+    user: "U1 - Official A",
     category: "Air Conditioner",
     total: 18,
     approved: 12,

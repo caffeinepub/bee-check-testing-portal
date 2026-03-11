@@ -153,16 +153,12 @@ export default function Layout({
           className="px-5 pt-6 pb-5"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
         >
-          <div className="flex items-center gap-3 mb-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-lg flex-shrink-0"
-              style={{
-                background: "linear-gradient(135deg, #f5a623, #e8920d)",
-                color: "#1a3a6b",
-              }}
-            >
-              BEE
-            </div>
+          <div className="flex items-center gap-3">
+            <img
+              src="/assets/uploads/image-5-1.png"
+              alt="BEE Logo"
+              className="w-12 h-12 rounded-full object-contain bg-white flex-shrink-0"
+            />
             <div className="min-w-0">
               <p className="text-white font-bold text-sm leading-tight">
                 BEE Portal
@@ -171,30 +167,6 @@ export default function Layout({
                 Check Testing Programme
               </p>
             </div>
-          </div>
-
-          {/* FY badge */}
-          <div className="flex items-center gap-2">
-            <span
-              className="text-xs font-semibold px-2.5 py-1 rounded-full"
-              style={{
-                background: "rgba(245,166,35,0.18)",
-                color: "#f5a623",
-                border: "1px solid rgba(245,166,35,0.35)",
-              }}
-            >
-              FY 2024-25
-            </span>
-            <span
-              className="text-xs px-2 py-1 rounded-full"
-              style={{
-                background: "rgba(16,185,129,0.15)",
-                color: "#34d399",
-                border: "1px solid rgba(16,185,129,0.25)",
-              }}
-            >
-              ● LIVE
-            </span>
           </div>
         </div>
 
@@ -290,6 +262,11 @@ export default function Layout({
           }}
         >
           <div className="flex items-center gap-3">
+            <img
+              src="/assets/uploads/image-5-1.png"
+              alt="BEE Logo"
+              className="w-9 h-9 rounded-full object-contain bg-white border border-gray-200"
+            />
             <div>
               <h1
                 className="text-sm font-bold leading-tight"
@@ -298,7 +275,7 @@ export default function Layout({
                 Bureau of Energy Efficiency
               </h1>
               <p className="text-xs text-gray-500">
-                Standards & Labelling · Check Testing Portal · FY 2024-25
+                Standards & Labelling · Check Testing Portal
               </p>
             </div>
           </div>

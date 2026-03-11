@@ -88,15 +88,11 @@ export default function LoginPage() {
           {/* Top brand */}
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-8">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-lg"
-                style={{
-                  background: "linear-gradient(135deg, #f5a623, #e8920d)",
-                  color: "#1a3a6b",
-                }}
-              >
-                BEE
-              </div>
+              <img
+                src="/assets/uploads/image-5-1.png"
+                alt="BEE Logo"
+                className="w-14 h-14 rounded-full object-contain bg-white flex-shrink-0"
+              />
               <div>
                 <p className="text-white font-bold text-sm leading-tight tracking-wide">
                   GOVERNMENT OF INDIA
@@ -201,12 +197,11 @@ export default function LoginPage() {
             <div className="w-full max-w-md">
               {/* Mobile logo */}
               <div className="lg:hidden flex items-center gap-3 mb-8">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm"
-                  style={{ background: "#1a3a6b", color: "white" }}
-                >
-                  BEE
-                </div>
+                <img
+                  src="/assets/uploads/image-5-1.png"
+                  alt="BEE Logo"
+                  className="w-10 h-10 rounded-full object-contain bg-white flex-shrink-0"
+                />
                 <div>
                   <p className="font-bold text-sm" style={{ color: "#1a3a6b" }}>
                     Bureau of Energy Efficiency

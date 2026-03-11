@@ -13,17 +13,17 @@ const demoAccounts: AuthUser[] = [
   {
     email: "director@bee.gov.in",
     role: "director",
-    name: "Dr. Rajesh Kumar (Director)",
+    name: "BEE Director",
   },
   {
     email: "official@bee.gov.in",
     role: "official",
-    name: "Anil Sharma (BEE Official)",
+    name: "BEE Official",
   },
   {
     email: "purchaser@bee.gov.in",
     role: "purchaser",
-    name: "Meena Devi (SDA Purchaser)",
+    name: "SDA Purchaser",
   },
   { email: "lab@bee.gov.in", role: "lab", name: "NABL Lab Delhi" },
 ];

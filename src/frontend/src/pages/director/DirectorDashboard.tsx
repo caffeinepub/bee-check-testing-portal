@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import {
   AlertTriangle,
   ArrowRight,
@@ -271,8 +270,6 @@ const pipeline = [
 
 // ── component ─────────────────────────────────────────────────────────────────
 export default function DirectorDashboard({ onNavigate }: Props) {
-  const progPct = Math.round((38 / 245) * 100);
-
   return (
     <div className="space-y-6 pb-8">
       {/* ── Header Banner ── */}
@@ -287,76 +284,25 @@ export default function DirectorDashboard({ onNavigate }: Props) {
         {/* Dot overlay */}
         <div className="absolute inset-0 dot-pattern opacity-30 pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-          <div className="flex items-center gap-4">
-            <div
-              className="p-3 rounded-xl"
-              style={{
-                background: "rgba(245,166,35,0.2)",
-                border: "1px solid rgba(245,166,35,0.35)",
-              }}
-            >
-              <Zap size={22} style={{ color: "#f5a623" }} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap mb-1">
-                <h2
-                  className="text-white font-bold text-xl leading-none"
-                  style={{ fontFamily: "'Sora', system-ui, sans-serif" }}
-                >
-                  Director Dashboard
-                </h2>
-                <span
-                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                  style={{
-                    background: "rgba(245,166,35,0.2)",
-                    color: "#f5a623",
-                    border: "1px solid rgba(245,166,35,0.3)",
-                  }}
-                >
-                  FY 2024-25
-                </span>
-                <span
-                  className="flex items-center gap-1.5 text-xs font-medium"
-                  style={{ color: "#34d399" }}
-                >
-                  <span
-                    className="w-2 h-2 rounded-full pulse-live inline-block"
-                    style={{ backgroundColor: "#10b981" }}
-                  />
-                  LIVE
-                </span>
-              </div>
-              <p className="text-blue-200 text-sm">
-                Standards & Labelling Programme &bull; Check Testing
-              </p>
-            </div>
-          </div>
-
-          {/* Progress block */}
+        <div className="relative z-10 flex items-center gap-4">
           <div
-            className="flex-shrink-0 rounded-xl p-4 min-w-[220px]"
+            className="p-3 rounded-xl"
             style={{
-              background: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.15)",
+              background: "rgba(245,166,35,0.2)",
+              border: "1px solid rgba(245,166,35,0.35)",
             }}
           >
-            <div className="flex justify-between text-xs mb-2">
-              <span className="text-blue-100">Programme Progress</span>
-              <span className="text-white font-bold">{progPct}%</span>
-            </div>
-            <div className="h-2.5 bg-white/20 rounded-full overflow-hidden mb-2">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${progPct}%`,
-                  background: "linear-gradient(90deg, #34d399, #10b981)",
-                }}
-              />
-            </div>
-            <p className="text-blue-200 text-xs">
-              <span className="text-white font-bold">38</span> of 245 targets
-              completed
+            <Zap size={22} style={{ color: "#f5a623" }} />
+          </div>
+          <div>
+            <h2
+              className="text-white font-bold text-xl leading-none mb-1"
+              style={{ fontFamily: "'Sora', system-ui, sans-serif" }}
+            >
+              Director Dashboard
+            </h2>
+            <p className="text-blue-200 text-sm">
+              Standards &amp; Labelling Programme &bull; Check Testing
             </p>
           </div>
         </div>
