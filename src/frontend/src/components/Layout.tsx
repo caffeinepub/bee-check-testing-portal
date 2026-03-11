@@ -1,0 +1,356 @@
+import { Button } from "@/components/ui/button";
+import {
+  Activity,
+  Bell,
+  CheckCircle,
+  ChevronRight,
+  Database,
+  DollarSign,
+  FileCheck,
+  FlaskConical,
+  LayoutDashboard,
+  List,
+  LogOut,
+  RefreshCw,
+  Search,
+  ShoppingCart,
+  Target,
+  TestTube,
+  Upload,
+  Users,
+  XCircle,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+
+interface LayoutProps {
+  children: React.ReactNode;
+  activePage: string;
+  onNavigate: (page: string) => void;
+}
+
+const navItems: Record<
+  string,
+  { icon: React.ReactNode; label: string; page: string }[]
+> = {
+  director: [
+    {
+      icon: <LayoutDashboard size={18} />,
+      label: "Dashboard",
+      page: "dashboard",
+    },
+    {
+      icon: <Database size={18} />,
+      label: "Appliance Data",
+      page: "appliance",
+    },
+    { icon: <FlaskConical size={18} />, label: "Lab Monitoring", page: "lab" },
+    {
+      icon: <DollarSign size={18} />,
+      label: "Financial Monitoring",
+      page: "financial",
+    },
+    {
+      icon: <Users size={18} />,
+      label: "Official Performance",
+      page: "performance",
+    },
+    { icon: <Target size={18} />, label: "Target Creation", page: "targets" },
+  ],
+  official: [
+    {
+      icon: <LayoutDashboard size={18} />,
+      label: "Dashboard",
+      page: "dashboard",
+    },
+    { icon: <FileCheck size={18} />, label: "Review Reports", page: "review" },
+    {
+      icon: <CheckCircle size={18} />,
+      label: "Approved Reports",
+      page: "approved",
+    },
+    {
+      icon: <XCircle size={18} />,
+      label: "Rejected Reports",
+      page: "rejected",
+    },
+  ],
+  purchaser: [
+    {
+      icon: <LayoutDashboard size={18} />,
+      label: "Dashboard",
+      page: "dashboard",
+    },
+    {
+      icon: <Search size={18} />,
+      label: "Search & Block Product",
+      page: "search",
+    },
+    {
+      icon: <ShoppingCart size={18} />,
+      label: "My Purchases",
+      page: "purchases",
+    },
+    { icon: <Activity size={18} />, label: "Track Status", page: "track" },
+  ],
+  lab: [
+    {
+      icon: <LayoutDashboard size={18} />,
+      label: "Dashboard",
+      page: "dashboard",
+    },
+    { icon: <List size={18} />, label: "Assigned Samples", page: "samples" },
+    { icon: <RefreshCw size={18} />, label: "Update Status", page: "update" },
+    { icon: <Upload size={18} />, label: "Upload Report", page: "upload" },
+    { icon: <TestTube size={18} />, label: "Test Schedule", page: "schedule" },
+  ],
+};
+
+const roleLabels: Record<string, string> = {
+  director: "BEE Director",
+  official: "BEE Official",
+  purchaser: "SDA Purchaser",
+  lab: "Test Laboratory",
+};
+
+const roleAccentColors: Record<string, string> = {
+  director: "#f5a623",
+  official: "#10b981",
+  purchaser: "#f59e0b",
+  lab: "#8b5cf6",
+};
+
+export default function Layout({
+  children,
+  activePage,
+  onNavigate,
+}: LayoutProps) {
+  const { user, logout } = useAuth();
+  if (!user) return null;
+
+  const items = navItems[user.role] || [];
+  const today = new Date().toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  return (
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ backgroundColor: "#f0f4f8" }}
+    >
+      {/* ── Sidebar ── */}
+      <aside
+        className="w-72 flex-shrink-0 flex flex-col relative"
+        style={{
+          background:
+            "linear-gradient(180deg, #1a3a6b 0%, #0f2d57 70%, #091e3a 100%)",
+          boxShadow: "4px 0 20px rgba(26, 58, 107, 0.25)",
+        }}
+      >
+        {/* Logo / Brand area */}
+        <div
+          className="px-5 pt-6 pb-5"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-lg flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #f5a623, #e8920d)",
+                color: "#1a3a6b",
+              }}
+            >
+              BEE
+            </div>
+            <div className="min-w-0">
+              <p className="text-white font-bold text-sm leading-tight">
+                BEE Portal
+              </p>
+              <p className="text-blue-300 text-xs leading-tight">
+                Check Testing Programme
+              </p>
+            </div>
+          </div>
+
+          {/* FY badge */}
+          <div className="flex items-center gap-2">
+            <span
+              className="text-xs font-semibold px-2.5 py-1 rounded-full"
+              style={{
+                background: "rgba(245,166,35,0.18)",
+                color: "#f5a623",
+                border: "1px solid rgba(245,166,35,0.35)",
+              }}
+            >
+              FY 2024-25
+            </span>
+            <span
+              className="text-xs px-2 py-1 rounded-full"
+              style={{
+                background: "rgba(16,185,129,0.15)",
+                color: "#34d399",
+                border: "1px solid rgba(16,185,129,0.25)",
+              }}
+            >
+              ● LIVE
+            </span>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+          <p
+            className="text-xs font-semibold uppercase tracking-widest px-3 mb-3"
+            style={{ color: roleAccentColors[user.role] ?? "#f5a623" }}
+          >
+            {roleLabels[user.role]}
+          </p>
+          {items.map((item) => (
+            <button
+              type="button"
+              key={item.page}
+              data-ocid={`nav.${item.page}_link`}
+              onClick={() => onNavigate(item.page)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm transition-all duration-150 sidebar-nav-item ${
+                activePage === item.page
+                  ? "sidebar-nav-active text-white font-semibold"
+                  : "text-blue-200 hover:bg-white/8 hover:text-white"
+              }`}
+              style={
+                activePage === item.page
+                  ? { background: "rgba(255,255,255,0.1)" }
+                  : {}
+              }
+            >
+              <span
+                className={
+                  activePage === item.page ? "opacity-100" : "opacity-70"
+                }
+              >
+                {item.icon}
+              </span>
+              <span className="flex-1 text-left">{item.label}</span>
+              {activePage === item.page && (
+                <ChevronRight size={14} className="opacity-60" />
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* User info */}
+        <div
+          className="px-4 py-4"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-md"
+              style={{
+                background: `linear-gradient(135deg, ${roleAccentColors[user.role] ?? "#f5a623"}, #d4820a)`,
+                color: "#1a3a6b",
+              }}
+            >
+              {user.name[0]}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-white text-xs font-semibold truncate">
+                {user.name}
+              </p>
+              <p className="text-blue-400 text-xs truncate">{user.email}</p>
+            </div>
+          </div>
+          <Button
+            data-ocid="nav.logout_button"
+            onClick={logout}
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 text-xs rounded-lg"
+            style={{
+              color: "rgba(147,197,253,0.8)",
+              background: "rgba(255,255,255,0.05)",
+            }}
+          >
+            <LogOut size={13} />
+            Sign Out
+          </Button>
+        </div>
+      </aside>
+
+      {/* ── Main Area ── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top bar */}
+        <header
+          className="flex-shrink-0 flex items-center justify-between px-6 bg-white"
+          style={{
+            height: "62px",
+            borderBottom: "1px solid #e2e8f0",
+            boxShadow: "0 1px 8px rgba(26,58,107,0.07)",
+            borderTop: "2px solid #1a3a6b",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div>
+              <h1
+                className="text-sm font-bold leading-tight"
+                style={{ color: "#1a3a6b" }}
+              >
+                Bureau of Energy Efficiency
+              </h1>
+              <p className="text-xs text-gray-500">
+                Standards & Labelling · Check Testing Portal · FY 2024-25
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Last updated */}
+            <span className="text-xs text-gray-400 hidden sm:block">
+              Last updated:{" "}
+              <span className="text-gray-600 font-medium">{today}</span>
+            </span>
+
+            {/* Notification bell */}
+            <button
+              type="button"
+              className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-gray-100"
+              style={{ color: "#64748b" }}
+              data-ocid="nav.notifications_button"
+              onClick={() => {}}
+            >
+              <Bell size={18} />
+              <span
+                className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                style={{ backgroundColor: "#dc2626" }}
+              />
+            </button>
+
+            {/* User info */}
+            <div className="flex items-center gap-2.5">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-semibold text-gray-800 leading-tight">
+                  {user.name}
+                </p>
+                <p className="text-xs text-gray-500 leading-tight">
+                  {roleLabels[user.role]}
+                </p>
+              </div>
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm"
+                style={{
+                  background: "linear-gradient(135deg, #1a3a6b, #0f2d57)",
+                  color: "white",
+                }}
+              >
+                {user.name[0]}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+      </div>
+    </div>
+  );
+}
