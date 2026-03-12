@@ -272,42 +272,6 @@ const pipeline = [
 export default function DirectorDashboard({ onNavigate }: Props) {
   return (
     <div className="space-y-6 pb-8">
-      {/* ── Header Banner ── */}
-      <div
-        className="rounded-2xl p-6 relative overflow-hidden"
-        style={{
-          background:
-            "linear-gradient(135deg, #1a3a6b 0%, #124a9e 60%, #0f5d9e 100%)",
-        }}
-        data-ocid="director.page"
-      >
-        {/* Dot overlay */}
-        <div className="absolute inset-0 dot-pattern opacity-30 pointer-events-none" />
-
-        <div className="relative z-10 flex items-center gap-4">
-          <div
-            className="p-3 rounded-xl"
-            style={{
-              background: "rgba(245,166,35,0.2)",
-              border: "1px solid rgba(245,166,35,0.35)",
-            }}
-          >
-            <Zap size={22} style={{ color: "#f5a623" }} />
-          </div>
-          <div>
-            <h2
-              className="text-white font-bold text-xl leading-none mb-1"
-              style={{ fontFamily: "'Sora', system-ui, sans-serif" }}
-            >
-              Director Dashboard
-            </h2>
-            <p className="text-blue-200 text-sm">
-              Standards &amp; Labelling Programme &bull; Check Testing
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* ── Procurement KPI Row ── */}
       <section data-ocid="director.procurement.section">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
