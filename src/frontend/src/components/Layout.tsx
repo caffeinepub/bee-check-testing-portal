@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   Target,
   TestTube,
+  TestTube2,
   Upload,
   Users,
   XCircle,
@@ -55,6 +56,7 @@ const navItems: Record<
       page: "performance",
     },
     { icon: <Target size={18} />, label: "Target Creation", page: "targets" },
+    { icon: <TestTube2 size={18} />, label: "Testing Module", page: "testing" },
   ],
   official: [
     {

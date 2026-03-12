@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import ApplianceDataPage from "./pages/director/ApplianceDataPage";
 import DirectorDashboard from "./pages/director/DirectorDashboard";
+import DirectorTestingPage from "./pages/director/DirectorTestingPage";
 import FinancialMonitoringPage from "./pages/director/FinancialMonitoringPage";
 import LabMonitoringPage from "./pages/director/LabMonitoringPage";
 import OfficialPerformancePage from "./pages/director/OfficialPerformancePage";
@@ -41,6 +42,8 @@ function AppContent() {
           return <OfficialPerformancePage />;
         case "targets":
           return <TargetCreationPage />;
+        case "testing":
+          return <DirectorTestingPage />;
         default:
           return <DirectorDashboard onNavigate={setActivePage} />;
       }

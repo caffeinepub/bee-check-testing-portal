@@ -12,11 +12,11 @@ import {
   Star,
   Target,
   TestTube,
+  TestTube2,
   TrendingDown,
   TrendingUp,
   Users,
   XCircle,
-  Zap,
 } from "lucide-react";
 import {
   Bar,
@@ -177,6 +177,15 @@ const quickNavLinks = [
     color: "#1a3a6b",
     bg: "#eff6ff",
     border: "#bfdbfe",
+  },
+  {
+    page: "testing",
+    label: "Testing Module",
+    desc: "Director Final Review",
+    icon: TestTube2,
+    color: "#0f766e",
+    bg: "#f0fdfa",
+    border: "#99f6e4",
   },
   {
     page: "reports",
