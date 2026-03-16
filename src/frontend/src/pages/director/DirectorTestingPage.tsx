@@ -16,217 +16,60 @@ import {
   ClipboardCheck,
   Clock,
   CornerUpLeft,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  FileType2,
   FlaskConical,
   RotateCcw,
   ShieldCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+  type ForwardedCase,
+  getForwardedCases,
+  subscribeForwardedCases,
+  updateForwardedCase,
+} from "../../store/forwardedCasesStore";
 
 // ── types ─────────────────────────────────────────────────────────────────────
 type Status = "Pending Review" | "Director Approved" | "Sent Back";
-type TestResult = "Pass" | "Fail";
+type FilterTab = "all" | "pending" | "approved" | "sentback";
 
-interface TestCase {
-  id: number;
-  appliance: string;
-  brand: string;
-  model: string;
-  stars: number;
-  official: string;
-  approvalDate: string;
-  lab: string;
-  testResult: TestResult;
-  status: Status;
-  remark: string;
+// ── doc display helpers ───────────────────────────────────────────────────────
+function DocTypeBadge({ type }: { type: string }) {
+  if (type === "PDF")
+    return (
+      <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">
+        PDF
+      </span>
+    );
+  if (type === "DOCX")
+    return (
+      <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700">
+        DOCX
+      </span>
+    );
+  if (type === "XLSX")
+    return (
+      <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700">
+        XLSX
+      </span>
+    );
+  return (
+    <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">
+      {type}
+    </span>
+  );
 }
 
-// ── seed data ─────────────────────────────────────────────────────────────────
-const INITIAL_CASES: TestCase[] = [
-  {
-    id: 1,
-    appliance: "Air Conditioner",
-    brand: "Voltas",
-    model: "VAC185",
-    stars: 5,
-    official: "Official A",
-    approvalDate: "05-Mar-2026",
-    lab: "Lab Delhi",
-    testResult: "Pass",
-    status: "Pending Review",
-    remark: "",
-  },
-  {
-    id: 2,
-    appliance: "Refrigerator",
-    brand: "Samsung",
-    model: "RF217",
-    stars: 4,
-    official: "Official B",
-    approvalDate: "04-Mar-2026",
-    lab: "Lab Mumbai",
-    testResult: "Pass",
-    status: "Pending Review",
-    remark: "",
-  },
-  {
-    id: 3,
-    appliance: "Washing Machine",
-    brand: "LG",
-    model: "WM309",
-    stars: 3,
-    official: "Official C",
-    approvalDate: "03-Mar-2026",
-    lab: "Lab Chennai",
-    testResult: "Fail",
-    status: "Pending Review",
-    remark: "",
-  },
-  {
-    id: 4,
-    appliance: "Ceiling Fan",
-    brand: "Havells",
-    model: "CF445",
-    stars: 4,
-    official: "Official D",
-    approvalDate: "02-Mar-2026",
-    lab: "Lab Pune",
-    testResult: "Pass",
-    status: "Director Approved",
-    remark: "Compliant. All parameters met.",
-  },
-  {
-    id: 5,
-    appliance: "LED Light",
-    brand: "Syska",
-    model: "LED220",
-    stars: 5,
-    official: "Official E",
-    approvalDate: "01-Mar-2026",
-    lab: "Lab Hyderabad",
-    testResult: "Pass",
-    status: "Director Approved",
-    remark: "Star rating verified and accurate.",
-  },
-  {
-    id: 6,
-    appliance: "Air Conditioner",
-    brand: "Daikin",
-    model: "DAC275",
-    stars: 4,
-    official: "Official A",
-    approvalDate: "28-Feb-2026",
-    lab: "Lab Delhi",
-    testResult: "Pass",
-    status: "Director Approved",
-    remark: "Energy label confirmed.",
-  },
-  {
-    id: 7,
-    appliance: "Refrigerator",
-    brand: "Whirlpool",
-    model: "WR320",
-    stars: 5,
-    official: "Official B",
-    approvalDate: "27-Feb-2026",
-    lab: "Lab Kolkata",
-    testResult: "Pass",
-    status: "Sent Back",
-    remark: "Invoice details incomplete. Please re-verify.",
-  },
-  {
-    id: 8,
-    appliance: "Washing Machine",
-    brand: "Bosch",
-    model: "WM110",
-    stars: 4,
-    official: "Official C",
-    approvalDate: "26-Feb-2026",
-    lab: "Lab Bangalore",
-    testResult: "Fail",
-    status: "Sent Back",
-    remark: "Test report shows energy consumption anomaly.",
-  },
-  {
-    id: 9,
-    appliance: "LED Light",
-    brand: "Philips",
-    model: "PL330",
-    stars: 5,
-    official: "Official A",
-    approvalDate: "25-Feb-2026",
-    lab: "Lab Delhi",
-    testResult: "Pass",
-    status: "Director Approved",
-    remark: "Approved. NABL report valid.",
-  },
-  {
-    id: 10,
-    appliance: "Ceiling Fan",
-    brand: "Orient",
-    model: "CF512",
-    stars: 3,
-    official: "Official D",
-    approvalDate: "24-Feb-2026",
-    lab: "Lab Jaipur",
-    testResult: "Pass",
-    status: "Pending Review",
-    remark: "",
-  },
-  {
-    id: 11,
-    appliance: "Air Conditioner",
-    brand: "Blue Star",
-    model: "BS190",
-    stars: 4,
-    official: "Official E",
-    approvalDate: "23-Feb-2026",
-    lab: "Lab Delhi",
-    testResult: "Pass",
-    status: "Pending Review",
-    remark: "",
-  },
-  {
-    id: 12,
-    appliance: "Refrigerator",
-    brand: "Godrej",
-    model: "GR251",
-    stars: 5,
-    official: "Official B",
-    approvalDate: "22-Feb-2026",
-    lab: "Lab Mumbai",
-    testResult: "Pass",
-    status: "Director Approved",
-    remark: "Fully compliant. Cleared.",
-  },
-  {
-    id: 13,
-    appliance: "Washing Machine",
-    brand: "IFB",
-    model: "WM220",
-    stars: 4,
-    official: "Official C",
-    approvalDate: "21-Feb-2026",
-    lab: "Lab Chennai",
-    testResult: "Pass",
-    status: "Director Approved",
-    remark: "All test parameters within BEE norms.",
-  },
-  {
-    id: 14,
-    appliance: "LED Light",
-    brand: "Crompton",
-    model: "CL440",
-    stars: 3,
-    official: "Official D",
-    approvalDate: "20-Feb-2026",
-    lab: "Lab Pune",
-    testResult: "Fail",
-    status: "Pending Review",
-    remark: "",
-  },
-];
-
-type FilterTab = "all" | "pending" | "approved" | "sentback";
+function DocIcon({ type }: { type: string }) {
+  if (type === "PDF") return <FileText size={14} className="text-red-500" />;
+  if (type === "XLSX")
+    return <FileSpreadsheet size={14} className="text-green-600" />;
+  return <FileType2 size={14} className="text-blue-500" />;
+}
 
 // ── star display ──────────────────────────────────────────────────────────────
 const STAR_INDICES = [0, 1, 2, 3, 4];
@@ -266,7 +109,7 @@ function StatusBadge({ status }: { status: Status }) {
   );
 }
 
-function ResultBadge({ result }: { result: TestResult }) {
+function ResultBadge({ result }: { result: "Pass" | "Fail" }) {
   if (result === "Pass")
     return (
       <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
@@ -291,18 +134,32 @@ const STEPS = [
 
 // ── component ─────────────────────────────────────────────────────────────────
 export default function DirectorTestingPage() {
-  const [cases, setCases] = useState<TestCase[]>(INITIAL_CASES);
+  const [cases, setCases] = useState<ForwardedCase[]>(getForwardedCases);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
   // Approve dialog state
-  const [approveTarget, setApproveTarget] = useState<TestCase | null>(null);
+  const [approveTarget, setApproveTarget] = useState<ForwardedCase | null>(
+    null,
+  );
   const [approveRemark, setApproveRemark] = useState("");
   const [approveError, setApproveError] = useState(false);
 
   // Send Back dialog state
-  const [sendBackTarget, setSendBackTarget] = useState<TestCase | null>(null);
+  const [sendBackTarget, setSendBackTarget] = useState<ForwardedCase | null>(
+    null,
+  );
   const [sendBackReason, setSendBackReason] = useState("");
   const [sendBackError, setSendBackError] = useState(false);
+
+  // View docs dialog state
+  const [viewDocsCase, setViewDocsCase] = useState<ForwardedCase | null>(null);
+
+  // Subscribe to store updates
+  useEffect(() => {
+    return subscribeForwardedCases(() => {
+      setCases(getForwardedCases());
+    });
+  }, []);
 
   const pendingCount = cases.filter(
     (c) => c.status === "Pending Review",
@@ -325,16 +182,15 @@ export default function DirectorTestingPage() {
       return;
     }
     if (!approveTarget) return;
-    setCases((prev) =>
-      prev.map((c) =>
-        c.id === approveTarget.id
-          ? { ...c, status: "Director Approved", remark: approveRemark.trim() }
-          : c,
-      ),
-    );
+    updateForwardedCase(approveTarget.reportId, {
+      status: "Director Approved",
+      remark: approveRemark.trim(),
+    });
+    setCases(getForwardedCases());
     setApproveTarget(null);
     setApproveRemark("");
     setApproveError(false);
+    toast.success("Case approved successfully");
   }
 
   function handleSendBackConfirm() {
@@ -343,20 +199,19 @@ export default function DirectorTestingPage() {
       return;
     }
     if (!sendBackTarget) return;
-    setCases((prev) =>
-      prev.map((c) =>
-        c.id === sendBackTarget.id
-          ? { ...c, status: "Sent Back", remark: sendBackReason.trim() }
-          : c,
-      ),
-    );
+    updateForwardedCase(sendBackTarget.reportId, {
+      status: "Sent Back",
+      remark: sendBackReason.trim(),
+    });
+    setCases(getForwardedCases());
     setSendBackTarget(null);
     setSendBackReason("");
     setSendBackError(false);
+    toast.success("Case sent back to BEE Official");
   }
 
   const pendingRows = filtered.filter((c) => c.status === "Pending Review");
-  const pendingIdxMap = new Map(pendingRows.map((c, i) => [c.id, i + 1]));
+  const pendingIdxMap = new Map(pendingRows.map((c, i) => [c.reportId, i + 1]));
 
   return (
     <div className="space-y-6 pb-8">
@@ -556,9 +411,10 @@ export default function DirectorTestingPage() {
                     "Model No.",
                     "Stars",
                     "BEE Official",
-                    "Approval Date",
+                    "Forwarded On",
                     "Test Lab",
                     "Test Result",
+                    "Documents",
                     "Director Decision",
                     "Remarks",
                     "Action",
@@ -575,10 +431,11 @@ export default function DirectorTestingPage() {
               </thead>
               <tbody>
                 {filtered.map((row, idx) => {
-                  const pendingIdx = pendingIdxMap.get(row.id);
+                  const pendingIdx = pendingIdxMap.get(row.reportId);
+                  const docCount = row.attachedDocuments?.length ?? 0;
                   return (
                     <tr
-                      key={row.id}
+                      key={row.reportId}
                       className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors"
                     >
                       <td className="px-4 py-3 text-gray-500 font-medium">
@@ -600,13 +457,28 @@ export default function DirectorTestingPage() {
                         {row.official}
                       </td>
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
-                        {row.approvalDate}
+                        {row.forwardedAt}
                       </td>
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
                         {row.lab}
                       </td>
                       <td className="px-4 py-3">
                         <ResultBadge result={row.testResult} />
+                      </td>
+                      <td className="px-4 py-3">
+                        {docCount > 0 ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            data-ocid={`director.view_docs.button.${idx + 1}`}
+                            className="h-6 px-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-50"
+                            onClick={() => setViewDocsCase(row)}
+                          >
+                            📎 {docCount}
+                          </Button>
+                        ) : (
+                          <span className="text-gray-300 text-xs">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={row.status} />
@@ -677,6 +549,142 @@ export default function DirectorTestingPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── View Documents Dialog ── */}
+      <Dialog
+        open={!!viewDocsCase}
+        onOpenChange={(open) => !open && setViewDocsCase(null)}
+      >
+        <DialogContent
+          className="max-w-lg max-h-[80vh] overflow-y-auto"
+          data-ocid="director.docs.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle style={{ color: "#1a3a6b" }}>
+              Documents — {viewDocsCase?.brand} {viewDocsCase?.model}
+            </DialogTitle>
+          </DialogHeader>
+          {viewDocsCase && (
+            <div className="space-y-4">
+              {/* Forwarding Note */}
+              {viewDocsCase.forwardingNote && (
+                <div
+                  className="rounded-lg p-3"
+                  style={{
+                    backgroundColor: "#f0f7ff",
+                    border: "1px solid #bae6fd",
+                  }}
+                >
+                  <p className="text-xs font-semibold text-blue-800 mb-1">
+                    📋 Forwarding Note from BEE Official
+                  </p>
+                  <p className="text-xs text-blue-700 leading-relaxed">
+                    {viewDocsCase.forwardingNote}
+                  </p>
+                  <p className="text-xs text-blue-400 mt-1">
+                    Forwarded by {viewDocsCase.forwardedBy} on{" "}
+                    {viewDocsCase.forwardedAt}
+                  </p>
+                </div>
+              )}
+
+              {/* Test Lab Docs */}
+              {viewDocsCase.attachedDocuments.filter(
+                (d) => d.uploadedBy === "Test Lab",
+              ).length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                    🔬 Test Lab Documents
+                  </p>
+                  <div className="space-y-1.5">
+                    {viewDocsCase.attachedDocuments
+                      .filter((d) => d.uploadedBy === "Test Lab")
+                      .map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-100"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <DocIcon type={doc.type} />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-gray-800 truncate">
+                                {doc.name}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {doc.size} · {doc.uploadedAt}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <DocTypeBadge type={doc.type} />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2 text-xs text-blue-600"
+                              onClick={() =>
+                                toast.success(`Downloading: ${doc.name}`)
+                              }
+                            >
+                              <Download size={11} className="mr-1" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* BEE Official Docs */}
+              {viewDocsCase.attachedDocuments.filter(
+                (d) => d.uploadedBy === "BEE Official",
+              ).length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                    👮 BEE Official Documents
+                  </p>
+                  <div className="space-y-1.5">
+                    {viewDocsCase.attachedDocuments
+                      .filter((d) => d.uploadedBy === "BEE Official")
+                      .map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-100"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <DocIcon type={doc.type} />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-gray-800 truncate">
+                                {doc.name}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {doc.size} · {doc.uploadedAt}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <DocTypeBadge type={doc.type} />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2 text-xs text-blue-600"
+                              onClick={() =>
+                                toast.success(`Downloading: ${doc.name}`)
+                              }
+                            >
+                              <Download size={11} className="mr-1" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Approve Final Dialog ── */}
       <Dialog
@@ -751,6 +759,17 @@ export default function DirectorTestingPage() {
                     </p>
                     <ResultBadge result={approveTarget.testResult} />
                   </div>
+                  {approveTarget.attachedDocuments?.length > 0 && (
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-400 font-medium">
+                        Attached Documents
+                      </p>
+                      <p className="text-sm font-semibold text-blue-700">
+                        📎 {approveTarget.attachedDocuments.length} document(s)
+                        from BEE Official
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
               <div>
