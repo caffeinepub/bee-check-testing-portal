@@ -7,6 +7,7 @@ import {
   CheckCircle,
   Clock,
   DollarSign,
+  Map as MapIcon,
   Package,
   ShoppingCart,
   Star,
@@ -34,7 +35,6 @@ interface Props {
   onNavigate: (page: string) => void;
 }
 
-// ── data ──────────────────────────────────────────────────────────────────────
 const procurementKpis = [
   {
     label: "Total Target",
@@ -188,6 +188,15 @@ const quickNavLinks = [
     border: "#99f6e4",
   },
   {
+    page: "mapDashboard",
+    label: "India Map",
+    desc: "State-wise compliance map",
+    icon: MapIcon,
+    color: "#4f46e5",
+    bg: "#eef2ff",
+    border: "#c7d2fe",
+  },
+  {
     page: "reports",
     label: "Reports & Export",
     desc: "Download PDF/Excel data",
@@ -231,7 +240,6 @@ const recentActivity = [
   },
 ];
 
-// ── helpers ───────────────────────────────────────────────────────────────────
 function trendPct(current: number, prev: number) {
   return Math.round(((current - prev) / prev) * 100);
 }
@@ -242,9 +250,7 @@ function TrendBadge({ current, prev }: { current: number; prev: number }) {
   return (
     <div className="flex flex-col items-end gap-0.5">
       <span
-        className={`inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-          up ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
-        }`}
+        className={`inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full ${up ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
       >
         {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
         {Math.abs(pct)}%
@@ -268,7 +274,6 @@ const activityBadgeStyle: Record<string, { label: string; cls: string }> = {
   new: { label: "New", cls: "bg-blue-100 text-blue-800" },
 };
 
-// ── pipeline ──────────────────────────────────────────────────────────────────
 const pipeline = [
   { label: "Target", value: 245, color: "#1a3a6b", bg: "#eff6ff" },
   { label: "Blocked", value: 89, color: "#d97706", bg: "#fffbeb" },
@@ -277,11 +282,10 @@ const pipeline = [
   { label: "Pass", value: 38, color: "#059669", bg: "#ecfdf5" },
 ];
 
-// ── component ─────────────────────────────────────────────────────────────────
 export default function DirectorDashboard({ onNavigate }: Props) {
   return (
     <div className="space-y-6 pb-8">
-      {/* ── Procurement KPI Row ── */}
+      {/* Procurement KPI Row */}
       <section data-ocid="director.procurement.section">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
           <span
@@ -305,7 +309,6 @@ export default function DirectorDashboard({ onNavigate }: Props) {
                   className="border-0 bee-card-hover overflow-hidden"
                   style={{ boxShadow: "0 2px 12px rgba(26,58,107,0.08)" }}
                 >
-                  {/* Left accent bar */}
                   <div
                     className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
                     style={{ backgroundColor: kpi.accent }}
@@ -357,7 +360,7 @@ export default function DirectorDashboard({ onNavigate }: Props) {
         </div>
       </section>
 
-      {/* ── Testing KPI Row ── */}
+      {/* Testing KPI Row */}
       <section data-ocid="director.testing.section">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
           <span
@@ -421,7 +424,7 @@ export default function DirectorDashboard({ onNavigate }: Props) {
         </div>
       </section>
 
-      {/* ── Pipeline Funnel ── */}
+      {/* Pipeline Funnel */}
       <section data-ocid="director.pipeline.section">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
           <span
@@ -446,7 +449,6 @@ export default function DirectorDashboard({ onNavigate }: Props) {
                     key={stage.label}
                     className="flex items-center flex-shrink-0"
                   >
-                    {/* Stage box */}
                     <div
                       className="flex flex-col items-center px-5 py-4 rounded-xl min-w-[90px] text-center"
                       style={{
@@ -476,8 +478,6 @@ export default function DirectorDashboard({ onNavigate }: Props) {
                         {Math.round((stage.value / 245) * 100)}%
                       </span>
                     </div>
-
-                    {/* Arrow + conversion */}
                     {conversionNext !== null && (
                       <div className="flex flex-col items-center mx-2 flex-shrink-0">
                         <ArrowRight size={18} className="text-gray-300" />
@@ -497,12 +497,11 @@ export default function DirectorDashboard({ onNavigate }: Props) {
         </Card>
       </section>
 
-      {/* ── Charts ── */}
+      {/* Charts */}
       <section
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
         data-ocid="director.charts.section"
       >
-        {/* Bar Chart */}
         <Card
           className="border-0"
           style={{
@@ -589,7 +588,6 @@ export default function DirectorDashboard({ onNavigate }: Props) {
           </CardContent>
         </Card>
 
-        {/* Donut Chart */}
         <Card
           className="border-0"
           style={{
@@ -677,12 +675,11 @@ export default function DirectorDashboard({ onNavigate }: Props) {
         </Card>
       </section>
 
-      {/* ── Quick Nav + Activity ── */}
+      {/* Quick Nav + Activity */}
       <section
         className="grid grid-cols-1 lg:grid-cols-5 gap-4"
         data-ocid="director.bottom.section"
       >
-        {/* Quick nav — 3 cols on desktop */}
         <Card
           className="border-0 lg:col-span-3"
           style={{ boxShadow: "0 2px 12px rgba(26,58,107,0.08)" }}
@@ -740,7 +737,6 @@ export default function DirectorDashboard({ onNavigate }: Props) {
           </CardContent>
         </Card>
 
-        {/* Recent Activity — timeline style */}
         <Card
           className="border-0 lg:col-span-2"
           style={{ boxShadow: "0 2px 12px rgba(26,58,107,0.08)" }}
@@ -773,7 +769,6 @@ export default function DirectorDashboard({ onNavigate }: Props) {
                     data-ocid={`director.activity.item.${idx + 1}`}
                     className="flex items-start gap-3 pb-4 relative"
                   >
-                    {/* Timeline dot */}
                     <div
                       className="w-4 h-4 rounded-full flex-shrink-0 mt-0.5 ring-2 ring-white z-10"
                       style={{ backgroundColor: dotColor }}

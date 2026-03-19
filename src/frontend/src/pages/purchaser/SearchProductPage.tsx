@@ -150,6 +150,8 @@ const emptyForm = (): PurchaseFormState => ({
 export default function SearchProductPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [starFilter, setStarFilter] = useState("");
+  const [brandFilter, setBrandFilter] = useState("");
+  const [modelFilter, setModelFilter] = useState("");
   const [searched, setSearched] = useState(false);
   const [blockedProduct, setBlockedProduct] = useState<
     (typeof availableProducts)[0] | null
@@ -163,7 +165,11 @@ export default function SearchProductPage() {
   const results = availableProducts.filter(
     (p) =>
       (!categoryFilter || p.categoryId === Number.parseInt(categoryFilter)) &&
-      (!starFilter || p.starRating === Number.parseInt(starFilter)),
+      (!starFilter || p.starRating === Number.parseInt(starFilter)) &&
+      (!brandFilter ||
+        p.brandName.toLowerCase().includes(brandFilter.toLowerCase())) &&
+      (!modelFilter ||
+        p.modelNumber.toLowerCase().includes(modelFilter.toLowerCase())),
   );
 
   // Auto-fill from blocked product
@@ -185,10 +191,8 @@ export default function SearchProductPage() {
   useEffect(() => {
     const invoice = Number.parseFloat(form.invoiceAmount) || 0;
     if (isOnline) {
-      // Online mode: total = invoice amount only
       setForm((f) => ({ ...f, totalAmount: String(invoice) }));
     } else {
-      // Offline mode: total = invoice + transport + manpower + insurance
       const transport = Number.parseFloat(form.transportationCost) || 0;
       const manpower = Number.parseFloat(form.manpowerCost) || 0;
       const insurance = Number.parseFloat(form.insurance) || 0;
@@ -257,6 +261,14 @@ export default function SearchProductPage() {
     }
   };
 
+  const handleReset = () => {
+    setCategoryFilter("");
+    setStarFilter("");
+    setBrandFilter("");
+    setModelFilter("");
+    setSearched(false);
+  };
+
   return (
     <div>
       <div className="mb-6">
@@ -272,7 +284,7 @@ export default function SearchProductPage() {
         <h3 className="font-semibold text-gray-800 mb-3 text-sm">
           Search Product
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
           <div>
             <p className="text-xs text-gray-600 mb-1">Appliance Category</p>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -290,6 +302,26 @@ export default function SearchProductPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <p className="text-xs text-gray-600 mb-1">Brand Name</p>
+            <Input
+              data-ocid="search.brand.input"
+              value={brandFilter}
+              onChange={(e) => setBrandFilter(e.target.value)}
+              placeholder="e.g. Samsung, LG, Havells"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div>
+            <p className="text-xs text-gray-600 mb-1">Model Number</p>
+            <Input
+              data-ocid="search.model.input"
+              value={modelFilter}
+              onChange={(e) => setModelFilter(e.target.value)}
+              placeholder="e.g. AC-1.5T-3S"
+              className="h-9 text-sm"
+            />
           </div>
           <div>
             <p className="text-xs text-gray-600 mb-1">Star Rating</p>
@@ -324,14 +356,22 @@ export default function SearchProductPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button
               data-ocid="search.search.button"
-              className="w-full h-9"
+              className="flex-1 h-9"
               style={{ backgroundColor: "#1a3a6b" }}
               onClick={() => setSearched(true)}
             >
               Search
+            </Button>
+            <Button
+              data-ocid="search.reset.button"
+              className="h-9 px-3"
+              variant="outline"
+              onClick={handleReset}
+            >
+              Reset
             </Button>
           </div>
         </div>
@@ -359,43 +399,55 @@ export default function SearchProductPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {results.map((p, i) => (
-                <TableRow
-                  key={p.id}
-                  data-ocid={`search.result.row.${i + 1}`}
-                  className="hover:bg-blue-50"
-                >
-                  <TableCell className="text-xs">{i + 1}</TableCell>
-                  <TableCell className="text-xs">{p.categoryName}</TableCell>
-                  <TableCell className="text-xs font-medium">
-                    {p.brandName}
-                  </TableCell>
-                  <TableCell className="text-xs font-mono">
-                    {p.modelNumber}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {"★".repeat(p.starRating)}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    ₹{p.price.toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">
-                      Available
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      data-ocid={`search.block.button.${i + 1}`}
-                      size="sm"
-                      className="h-6 text-xs px-2 bg-yellow-500 hover:bg-yellow-600 text-white"
-                      onClick={() => handleBlock(p)}
-                    >
-                      Block
-                    </Button>
+              {results.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={8}
+                    className="text-center text-sm text-gray-500 py-8"
+                    data-ocid="search.results.empty_state"
+                  >
+                    No products found matching your search criteria.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                results.map((p, i) => (
+                  <TableRow
+                    key={p.id}
+                    data-ocid={`search.result.row.${i + 1}`}
+                    className="hover:bg-blue-50"
+                  >
+                    <TableCell className="text-xs">{i + 1}</TableCell>
+                    <TableCell className="text-xs">{p.categoryName}</TableCell>
+                    <TableCell className="text-xs font-medium">
+                      {p.brandName}
+                    </TableCell>
+                    <TableCell className="text-xs font-mono">
+                      {p.modelNumber}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {"★".repeat(p.starRating)}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      ₹{p.price.toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">
+                        Available
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        data-ocid={`search.block.button.${i + 1}`}
+                        size="sm"
+                        className="h-6 text-xs px-2 bg-yellow-500 hover:bg-yellow-600 text-white"
+                        onClick={() => handleBlock(p)}
+                      >
+                        Block
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -429,7 +481,6 @@ export default function SearchProductPage() {
               <DialogTitle className="text-base font-bold text-gray-800">
                 Product purchased details
               </DialogTitle>
-              {/* Purchase Mode badge indicator */}
               {form.purchaseMode && (
                 <span
                   className={`text-xs font-semibold px-3 py-1 rounded-full ${

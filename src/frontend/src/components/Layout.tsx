@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   List,
   LogOut,
+  Map as MapIcon,
   RefreshCw,
   Search,
   ShoppingCart,
@@ -57,6 +58,7 @@ const navItems: Record<
     },
     { icon: <Target size={18} />, label: "Target Creation", page: "targets" },
     { icon: <TestTube2 size={18} />, label: "Testing Module", page: "testing" },
+    { icon: <MapIcon size={18} />, label: "India Map", page: "mapDashboard" },
   ],
   official: [
     {
@@ -277,19 +279,16 @@ export default function Layout({
                 Bureau of Energy Efficiency
               </h1>
               <p className="text-xs text-gray-500">
-                Standards & Labelling · Check Testing Portal
+                Standards &amp; Labelling · Check Testing Portal
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Last updated */}
             <span className="text-xs text-gray-400 hidden sm:block">
               Last updated:{" "}
               <span className="text-gray-600 font-medium">{today}</span>
             </span>
-
-            {/* Notification bell */}
             <button
               type="button"
               className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-gray-100"
@@ -303,8 +302,6 @@ export default function Layout({
                 style={{ backgroundColor: "#dc2626" }}
               />
             </button>
-
-            {/* User info */}
             <div className="flex items-center gap-2.5">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-semibold text-gray-800 leading-tight">

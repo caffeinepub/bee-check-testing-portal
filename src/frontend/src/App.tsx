@@ -7,6 +7,7 @@ import ApplianceDataPage from "./pages/director/ApplianceDataPage";
 import DirectorDashboard from "./pages/director/DirectorDashboard";
 import DirectorTestingPage from "./pages/director/DirectorTestingPage";
 import FinancialMonitoringPage from "./pages/director/FinancialMonitoringPage";
+import IndiaMapDashboard from "./pages/director/IndiaMapDashboard";
 import LabMonitoringPage from "./pages/director/LabMonitoringPage";
 import OfficialPerformancePage from "./pages/director/OfficialPerformancePage";
 import TargetCreationPage from "./pages/director/TargetCreationPage";
@@ -44,6 +45,8 @@ function AppContent() {
           return <TargetCreationPage />;
         case "testing":
           return <DirectorTestingPage />;
+        case "mapDashboard":
+          return <IndiaMapDashboard />;
         default:
           return <DirectorDashboard onNavigate={setActivePage} />;
       }
