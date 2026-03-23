@@ -97,16 +97,35 @@ export type LabTrackingStatus =
   | "NFT"
   | "InvoiceRaised";
 
-export const LAB_STATUS_SEQUENCE: LabTrackingStatus[] = [
+// Test path: full testing sequence ending with Invoice Raised
+export const LAB_STATUS_SEQUENCE_TEST: LabTrackingStatus[] = [
   "InTransit",
   "ReachedLab",
   "TestScheduled",
   "UnderTesting",
   "TestDone",
   "ReportUploaded",
-  "NFT",
   "InvoiceRaised",
 ];
+
+// NFT path: sample declared Not Fit for Test right after Reached Lab — terminal, no further steps
+export const LAB_STATUS_SEQUENCE_NFT: LabTrackingStatus[] = [
+  "InTransit",
+  "ReachedLab",
+  "NFT",
+];
+
+// LAB_STATUS_SEQUENCE points to test path for backward compatibility
+export const LAB_STATUS_SEQUENCE = LAB_STATUS_SEQUENCE_TEST;
+
+export function getPathForSample(sample: LabSample): LabTrackingStatus[] {
+  const hasNFT = sample.statusLog.some((e) => e.status === "NFT");
+  const hasTestScheduled = sample.statusLog.some(
+    (e) => e.status === "TestScheduled",
+  );
+  if (hasNFT && !hasTestScheduled) return LAB_STATUS_SEQUENCE_NFT;
+  return LAB_STATUS_SEQUENCE_TEST;
+}
 
 export const LAB_STATUS_LABELS: Record<LabTrackingStatus, string> = {
   InTransit: "In-Transit",
@@ -115,7 +134,7 @@ export const LAB_STATUS_LABELS: Record<LabTrackingStatus, string> = {
   UnderTesting: "Under Testing",
   TestDone: "Test Done",
   ReportUploaded: "Report Uploaded",
-  NFT: "NFT",
+  NFT: "NFT (Not Fit for Test)",
   InvoiceRaised: "Invoice Raised",
 };
 
@@ -126,7 +145,7 @@ export const HAS_ATTACHMENT: Record<LabTrackingStatus, boolean> = {
   UnderTesting: false,
   TestDone: false,
   ReportUploaded: true,
-  NFT: false,
+  NFT: true,
   InvoiceRaised: true,
 };
 
@@ -205,11 +224,6 @@ export const labSamples: LabSample[] = [
         date: "2024-05-01",
         remarks: "Test report uploaded",
         attachmentName: "Samsung_AC5500_TestReport.pdf",
-      },
-      {
-        status: "NFT",
-        date: "2024-05-02",
-        remarks: "0 units found not fit for test",
       },
       {
         status: "InvoiceRaised",
@@ -374,6 +388,7 @@ export const labSamples: LabSample[] = [
     labId: 1,
     labName: "NABL Lab Delhi",
     purchaserName: "Delhi SDA",
+    // NFT declared directly after Reached Lab — terminal status
     currentStatus: "NFT",
     statusLog: [
       {
@@ -383,26 +398,10 @@ export const labSamples: LabSample[] = [
       },
       { status: "ReachedLab", date: "2024-04-12", remarks: "Sample received" },
       {
-        status: "TestScheduled",
-        date: "2024-04-14",
-        remarks: "Test slot assigned",
-      },
-      {
-        status: "UnderTesting",
-        date: "2024-04-16",
-        remarks: "Testing commenced",
-      },
-      { status: "TestDone", date: "2024-04-20", remarks: "Testing completed" },
-      {
-        status: "ReportUploaded",
-        date: "2024-04-22",
-        remarks: "Report uploaded",
-        attachmentName: "Havells_Geyser_Report.pdf",
-      },
-      {
         status: "NFT",
-        date: "2024-04-23",
+        date: "2024-04-14",
         remarks: "2 units declared not fit for test due to electrical defect",
+        attachmentName: "NFT_Havells_Geyser_Evidence.pdf",
       },
     ],
   },

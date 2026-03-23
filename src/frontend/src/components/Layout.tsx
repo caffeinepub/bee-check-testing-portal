@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import {
-  Activity,
   Bell,
   CheckCircle,
   ChevronRight,
@@ -101,7 +100,6 @@ const navItems: Record<
       label: "Blocked Sample",
       page: "blocked",
     },
-    { icon: <Activity size={18} />, label: "Track Status", page: "track" },
   ],
   lab: [
     {

@@ -25,7 +25,6 @@ import BlockedSamplePage from "./pages/purchaser/BlockedSamplePage";
 import MyPurchasesPage from "./pages/purchaser/MyPurchasesPage";
 import PurchaserDashboard from "./pages/purchaser/PurchaserDashboard";
 import SearchProductPage from "./pages/purchaser/SearchProductPage";
-import TrackStatusPage from "./pages/purchaser/TrackStatusPage";
 
 function AppContent() {
   const { user } = useAuth();
@@ -74,8 +73,6 @@ function AppContent() {
           return <MyPurchasesPage />;
         case "blocked":
           return <BlockedSamplePage />;
-        case "track":
-          return <TrackStatusPage />;
         default:
           return <PurchaserDashboard onNavigate={setActivePage} />;
       }
