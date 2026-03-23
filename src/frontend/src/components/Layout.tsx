@@ -4,25 +4,27 @@ import {
   Bell,
   CheckCircle,
   ChevronRight,
+  ClipboardList,
   Database,
   DollarSign,
   FileCheck,
   FlaskConical,
   LayoutDashboard,
   List,
+  Lock,
   LogOut,
   Map as MapIcon,
-  RefreshCw,
+  RotateCcw,
   Search,
   ShoppingCart,
   Target,
-  TestTube,
   TestTube2,
   Upload,
   Users,
   XCircle,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useBlockedSamples } from "../contexts/BlockedSamplesContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -86,13 +88,18 @@ const navItems: Record<
     },
     {
       icon: <Search size={18} />,
-      label: "Search & Block Product",
+      label: "Search & Block Sample",
       page: "search",
     },
     {
       icon: <ShoppingCart size={18} />,
       label: "My Purchases",
       page: "purchases",
+    },
+    {
+      icon: <Lock size={18} />,
+      label: "Blocked Sample",
+      page: "blocked",
     },
     { icon: <Activity size={18} />, label: "Track Status", page: "track" },
   ],
@@ -102,10 +109,25 @@ const navItems: Record<
       label: "Dashboard",
       page: "dashboard",
     },
-    { icon: <List size={18} />, label: "Assigned Samples", page: "samples" },
-    { icon: <RefreshCw size={18} />, label: "Update Status", page: "update" },
+    { icon: <List size={18} />, label: "Sample Tracking", page: "samples" },
+    {
+      icon: <RotateCcw size={18} />,
+      label: "Revert from BEE",
+      page: "revert",
+    },
     { icon: <Upload size={18} />, label: "Upload Report", page: "upload" },
-    { icon: <TestTube size={18} />, label: "Test Schedule", page: "schedule" },
+  ],
+  labcoordinator: [
+    {
+      icon: <LayoutDashboard size={18} />,
+      label: "Dashboard",
+      page: "dashboard",
+    },
+    {
+      icon: <ClipboardList size={18} />,
+      label: "Assign Lab",
+      page: "assignlab",
+    },
   ],
 };
 
@@ -114,6 +136,7 @@ const roleLabels: Record<string, string> = {
   official: "BEE Official",
   purchaser: "SDA Purchaser",
   lab: "Test Laboratory",
+  labcoordinator: "Lab Coordinator",
 };
 
 const roleAccentColors: Record<string, string> = {
@@ -121,6 +144,7 @@ const roleAccentColors: Record<string, string> = {
   official: "#10b981",
   purchaser: "#f59e0b",
   lab: "#8b5cf6",
+  labcoordinator: "#06b6d4",
 };
 
 export default function Layout({
@@ -129,6 +153,7 @@ export default function Layout({
   onNavigate,
 }: LayoutProps) {
   const { user, logout } = useAuth();
+  const { blockedSamples } = useBlockedSamples();
   if (!user) return null;
 
   const items = navItems[user.role] || [];
@@ -137,6 +162,11 @@ export default function Layout({
     month: "short",
     year: "numeric",
   });
+
+  const pendingCount =
+    user.role === "labcoordinator"
+      ? blockedSamples.filter((s) => !s.labAssignment).length
+      : 0;
 
   return (
     <div
@@ -207,6 +237,14 @@ export default function Layout({
                 {item.icon}
               </span>
               <span className="flex-1 text-left">{item.label}</span>
+              {item.page === "assignlab" && pendingCount > 0 && (
+                <span
+                  className="text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+                  style={{ backgroundColor: "#d97706", color: "white" }}
+                >
+                  {pendingCount}
+                </span>
+              )}
               {activePage === item.page && (
                 <ChevronRight size={14} className="opacity-60" />
               )}
@@ -297,10 +335,19 @@ export default function Layout({
               onClick={() => {}}
             >
               <Bell size={18} />
-              <span
-                className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-                style={{ backgroundColor: "#dc2626" }}
-              />
+              {pendingCount > 0 ? (
+                <span
+                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5"
+                  style={{ backgroundColor: "#d97706" }}
+                >
+                  {pendingCount}
+                </span>
+              ) : (
+                <span
+                  className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                  style={{ backgroundColor: "#dc2626" }}
+                />
+              )}
             </button>
             <div className="flex items-center gap-2.5">
               <div className="text-right hidden sm:block">

@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,7 +8,6 @@ import {
 } from "@/components/ui/table";
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { applianceCategories, labs, mockSamples } from "../../data/mockData";
 
 type DrillLevel = "lab" | "category" | "state";
@@ -32,6 +30,7 @@ export default function LabMonitoringPage() {
       assigned: samples.length,
       inTransit: samples.filter((s) => s.status === "InTransit").length,
       reached: samples.filter((s) => s.status === "SampleReceived").length,
+      nft: samples.filter((s) => s.status === "NotFitForTest").length,
       underTesting: samples.filter((s) => s.status === "InTesting").length,
       tested: samples.filter((s) =>
         ["SampleTested", "ReportUploaded", "Approved"].includes(s.status),
@@ -100,6 +99,7 @@ export default function LabMonitoringPage() {
                   "Assigned",
                   "In-Transit",
                   "Reached Lab",
+                  "NFT",
                   "Under Testing",
                   "Tested",
                   "Pass",
@@ -135,21 +135,11 @@ export default function LabMonitoringPage() {
                     </TableCell>
                     <TableCell className="text-sm">{stats.assigned}</TableCell>
                     <TableCell className="text-sm">{stats.inTransit}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{stats.reached}</span>
-                        <Button
-                          data-ocid={`lab.not_fit.button.${i + 1}`}
-                          variant="outline"
-                          size="sm"
-                          className="h-5 text-xs px-1 text-red-600 border-red-200"
-                          onClick={() =>
-                            toast.info("Marked as Not Fit for Test")
-                          }
-                        >
-                          NFT
-                        </Button>
-                      </div>
+                    <TableCell className="text-sm">{stats.reached}</TableCell>
+                    <TableCell
+                      className={`text-sm font-medium ${stats.nft > 0 ? "text-red-600" : "text-gray-400"}`}
+                    >
+                      {stats.nft}
                     </TableCell>
                     <TableCell className="text-sm">
                       {stats.underTesting}
@@ -177,6 +167,7 @@ export default function LabMonitoringPage() {
                   "Assigned",
                   "In-Transit",
                   "Reached Lab",
+                  "NFT",
                   "Under Testing",
                   "Tested",
                   "Pass",
@@ -214,6 +205,11 @@ export default function LabMonitoringPage() {
                     <TableCell className="text-sm">{stats.assigned}</TableCell>
                     <TableCell className="text-sm">{stats.inTransit}</TableCell>
                     <TableCell className="text-sm">{stats.reached}</TableCell>
+                    <TableCell
+                      className={`text-sm font-medium ${stats.nft > 0 ? "text-red-600" : "text-gray-400"}`}
+                    >
+                      {stats.nft}
+                    </TableCell>
                     <TableCell className="text-sm">
                       {stats.underTesting}
                     </TableCell>

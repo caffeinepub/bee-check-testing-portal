@@ -19,40 +19,52 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { applianceCategories, mockTargets, states } from "../../data/mockData";
 
+const STARS = [1, 2, 3, 4, 5];
+
 export default function TargetCreationPage() {
   const [targets, setTargets] = useState(mockTargets);
   const [state, setState] = useState("");
   const [category, setCategory] = useState("");
-  const [star, setStar] = useState("");
-  const [qty, setQty] = useState("");
-  const [assignedTo, setAssignedTo] = useState("");
+  // starQty: { 1: "", 2: "", 3: "", 4: "", 5: "" }
+  const [starQty, setStarQty] = useState<Record<number, string>>({
+    1: "",
+    2: "",
+    3: "",
+    4: "",
+    5: "",
+  });
+
+  const handleQtyChange = (star: number, val: string) => {
+    setStarQty((prev) => ({ ...prev, [star]: val }));
+  };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!state || !category || !qty) {
-      toast.error("Please fill all required fields");
+    if (!state || !category) {
+      toast.error("Please select State and Appliance Category");
       return;
     }
-    setTargets((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        state,
-        categoryName: category,
-        starRating: Number.parseInt(star) || 3,
-        quantity: Number.parseInt(qty),
-        assigned: assignedTo || `${state} SDA`,
-        financialYear: "2024-25",
-        status: "Active",
-        purchased: 0,
-      },
-    ]);
-    toast.success("Target created successfully");
+    const entries = STARS.filter((s) => Number(starQty[s]) > 0);
+    if (entries.length === 0) {
+      toast.error("Please enter quantity for at least one star rating");
+      return;
+    }
+    const newRows = entries.map((s, idx) => ({
+      id: Date.now() + idx,
+      state,
+      categoryName: category,
+      starRating: s,
+      quantity: Number.parseInt(starQty[s]),
+      assigned: `${state} SDA`,
+      financialYear: "2024-25",
+      status: "Active",
+      purchased: 0,
+    }));
+    setTargets((prev) => [...prev, ...newRows]);
+    toast.success(`Target created for ${entries.length} star rating(s)`);
     setState("");
     setCategory("");
-    setStar("");
-    setQty("");
-    setAssignedTo("");
+    setStarQty({ 1: "", 2: "", 3: "", 4: "", 5: "" });
   };
 
   return (
@@ -68,81 +80,84 @@ export default function TargetCreationPage() {
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
         <h3 className="font-semibold text-gray-800 mb-4">Create New Target</h3>
-        <form
-          onSubmit={handleCreate}
-          className="grid grid-cols-2 md:grid-cols-3 gap-4"
-        >
-          <div>
-            <p className="text-xs text-gray-600 mb-1">State *</p>
-            <Select value={state} onValueChange={setState}>
-              <SelectTrigger data-ocid="target.state.select">
-                <SelectValue placeholder="Select state" />
-              </SelectTrigger>
-              <SelectContent>
-                {states.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <form onSubmit={handleCreate} className="space-y-5">
+          {/* Row 1: State + Category */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-600 mb-1">State *</p>
+              <Select value={state} onValueChange={setState}>
+                <SelectTrigger data-ocid="target.state.select">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {states.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <p className="text-xs text-gray-600 mb-1">Appliance Category *</p>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger data-ocid="target.category.select">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {applianceCategories.map((c) => (
+                    <SelectItem key={c.id} value={c.name}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Row 2: Star Rating + Quantity */}
           <div>
-            <p className="text-xs text-gray-600 mb-1">Appliance Category *</p>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger data-ocid="target.category.select">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {applianceCategories.map((c) => (
-                  <SelectItem key={c.id} value={c.name}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <p className="text-xs text-gray-600 mb-2">
+              Star Rating &amp; Target Quantity *
+            </p>
+            <div className="grid grid-cols-5 gap-3">
+              {STARS.map((s) => (
+                <div
+                  key={s}
+                  className="flex flex-col items-center gap-2 border border-gray-200 rounded-lg p-3 bg-gray-50"
+                >
+                  {/* Star label */}
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs font-semibold text-gray-700">
+                      Star {s}
+                    </span>
+                    <span className="text-yellow-400 text-sm leading-tight">
+                      {"★".repeat(s)}
+                      {"☆".repeat(5 - s)}
+                    </span>
+                  </div>
+                  {/* Quantity box */}
+                  <Input
+                    data-ocid={`target.star${s}.qty.input`}
+                    type="number"
+                    min={0}
+                    value={starQty[s]}
+                    onChange={(e) => handleQtyChange(s, e.target.value)}
+                    placeholder="Qty"
+                    className="text-center text-sm h-8 w-full"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-gray-600 mb-1">Star Rating</p>
-            <Select value={star} onValueChange={setStar}>
-              <SelectTrigger data-ocid="target.star.select">
-                <SelectValue placeholder="Select star" />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <SelectItem key={s} value={String(s)}>
-                    {s} Star
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <p className="text-xs text-gray-600 mb-1">Target Quantity *</p>
-            <Input
-              data-ocid="target.quantity.input"
-              type="number"
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              placeholder="Enter quantity"
-              min={1}
-            />
-          </div>
-          <div>
-            <p className="text-xs text-gray-600 mb-1">Assign To</p>
-            <Input
-              data-ocid="target.assignto.input"
-              value={assignedTo}
-              onChange={(e) => setAssignedTo(e.target.value)}
-              placeholder="e.g., Maharashtra SDA"
-            />
-          </div>
-          <div className="flex items-end">
+
+          {/* Submit */}
+          <div className="flex justify-end">
             <Button
               data-ocid="target.create.submit_button"
               type="submit"
               style={{ backgroundColor: "#1a3a6b" }}
-              className="w-full"
+              className="px-8"
             >
               Create Target
             </Button>
@@ -165,7 +180,6 @@ export default function TargetCreationPage() {
                 "Category",
                 "Star",
                 "Qty",
-                "Assigned To",
                 "Purchased",
                 "FY",
                 "Status",
@@ -187,12 +201,17 @@ export default function TargetCreationPage() {
                 <TableCell className="text-xs">{t.state}</TableCell>
                 <TableCell className="text-xs">{t.categoryName}</TableCell>
                 <TableCell className="text-xs">
-                  {"★".repeat(t.starRating)}
+                  <span className="text-yellow-500">
+                    {"★".repeat(t.starRating)}
+                  </span>
+                  <span className="text-gray-300">
+                    {"★".repeat(5 - t.starRating)}
+                  </span>
+                  <span className="ml-1 text-gray-600">({t.starRating})</span>
                 </TableCell>
                 <TableCell className="text-xs font-bold">
                   {t.quantity}
                 </TableCell>
-                <TableCell className="text-xs">{t.assigned}</TableCell>
                 <TableCell className="text-xs">
                   {t.purchased}/{t.quantity}
                 </TableCell>

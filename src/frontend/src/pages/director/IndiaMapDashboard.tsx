@@ -32,6 +32,7 @@ interface StateData {
   productsTested: number;
   passRate: number;
   targetsAchieved: number;
+  purchased: number;
   categories: { name: string; value: number }[];
   monthlyTrend: { month: string; value: number }[];
 }
@@ -40,7 +41,8 @@ type MetricKey =
   | "complianceRate"
   | "productsTested"
   | "passRate"
-  | "targetsAchieved";
+  | "targetsAchieved"
+  | "purchased";
 
 // ── Mock Data ─────────────────────────────────────────────────────────────────
 const stateData: Record<string, StateData> = {
@@ -52,6 +54,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 312,
     passRate: 82,
     targetsAchieved: 91,
+    purchased: 187,
     categories: [
       { name: "AC", value: 72 },
       { name: "Refrigerator", value: 65 },
@@ -76,6 +79,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 198,
     passRate: 71,
     targetsAchieved: 78,
+    purchased: 112,
     categories: [
       { name: "AC", value: 55 },
       { name: "Refrigerator", value: 48 },
@@ -100,6 +104,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 285,
     passRate: 65,
     targetsAchieved: 72,
+    purchased: 158,
     categories: [
       { name: "AC", value: 60 },
       { name: "Refrigerator", value: 55 },
@@ -124,6 +129,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 167,
     passRate: 73,
     targetsAchieved: 80,
+    purchased: 98,
     categories: [
       { name: "AC", value: 48 },
       { name: "Refrigerator", value: 38 },
@@ -148,6 +154,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 278,
     passRate: 88,
     targetsAchieved: 95,
+    purchased: 165,
     categories: [
       { name: "AC", value: 78 },
       { name: "Refrigerator", value: 72 },
@@ -172,6 +179,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 245,
     passRate: 85,
     targetsAchieved: 90,
+    purchased: 148,
     categories: [
       { name: "AC", value: 76 },
       { name: "Refrigerator", value: 68 },
@@ -196,6 +204,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 220,
     passRate: 79,
     targetsAchieved: 85,
+    purchased: 128,
     categories: [
       { name: "AC", value: 68 },
       { name: "Refrigerator", value: 60 },
@@ -220,6 +229,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 185,
     passRate: 77,
     targetsAchieved: 83,
+    purchased: 105,
     categories: [
       { name: "AC", value: 62 },
       { name: "Refrigerator", value: 55 },
@@ -244,6 +254,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 195,
     passRate: 80,
     targetsAchieved: 87,
+    purchased: 115,
     categories: [
       { name: "AC", value: 68 },
       { name: "Refrigerator", value: 58 },
@@ -268,6 +279,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 215,
     passRate: 69,
     targetsAchieved: 76,
+    purchased: 122,
     categories: [
       { name: "AC", value: 52 },
       { name: "Refrigerator", value: 45 },
@@ -292,6 +304,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 132,
     passRate: 62,
     targetsAchieved: 68,
+    purchased: 72,
     categories: [
       { name: "AC", value: 42 },
       { name: "Refrigerator", value: 35 },
@@ -316,6 +329,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 145,
     passRate: 55,
     targetsAchieved: 62,
+    purchased: 78,
     categories: [
       { name: "AC", value: 38 },
       { name: "Refrigerator", value: 30 },
@@ -340,6 +354,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 118,
     passRate: 58,
     targetsAchieved: 65,
+    purchased: 62,
     categories: [
       { name: "AC", value: 40 },
       { name: "Refrigerator", value: 32 },
@@ -364,6 +379,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 128,
     passRate: 64,
     targetsAchieved: 70,
+    purchased: 68,
     categories: [
       { name: "AC", value: 44 },
       { name: "Refrigerator", value: 36 },
@@ -388,6 +404,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 158,
     passRate: 75,
     targetsAchieved: 82,
+    purchased: 92,
     categories: [
       { name: "AC", value: 58 },
       { name: "Refrigerator", value: 50 },
@@ -412,6 +429,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 168,
     passRate: 77,
     targetsAchieved: 84,
+    purchased: 98,
     categories: [
       { name: "AC", value: 62 },
       { name: "Refrigerator", value: 52 },
@@ -436,6 +454,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 195,
     passRate: 83,
     targetsAchieved: 89,
+    purchased: 118,
     categories: [
       { name: "AC", value: 72 },
       { name: "Refrigerator", value: 63 },
@@ -460,6 +479,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 198,
     passRate: 90,
     targetsAchieved: 96,
+    purchased: 120,
     categories: [
       { name: "AC", value: 80 },
       { name: "Refrigerator", value: 74 },
@@ -484,6 +504,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 112,
     passRate: 60,
     targetsAchieved: 66,
+    purchased: 58,
     categories: [
       { name: "AC", value: 41 },
       { name: "Refrigerator", value: 33 },
@@ -508,6 +529,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 88,
     passRate: 72,
     targetsAchieved: 79,
+    purchased: 48,
     categories: [
       { name: "AC", value: 50 },
       { name: "Refrigerator", value: 42 },
@@ -532,6 +554,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 98,
     passRate: 74,
     targetsAchieved: 81,
+    purchased: 54,
     categories: [
       { name: "AC", value: 55 },
       { name: "Refrigerator", value: 47 },
@@ -556,6 +579,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 75,
     passRate: 67,
     targetsAchieved: 74,
+    purchased: 42,
     categories: [
       { name: "AC", value: 48 },
       { name: "Refrigerator", value: 40 },
@@ -580,6 +604,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 55,
     passRate: 87,
     targetsAchieved: 92,
+    purchased: 32,
     categories: [
       { name: "AC", value: 74 },
       { name: "Refrigerator", value: 66 },
@@ -604,6 +629,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 68,
     passRate: 57,
     targetsAchieved: 63,
+    purchased: 35,
     categories: [
       { name: "AC", value: 38 },
       { name: "Refrigerator", value: 30 },
@@ -628,6 +654,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 72,
     passRate: 59,
     targetsAchieved: 65,
+    purchased: 38,
     categories: [
       { name: "AC", value: 40 },
       { name: "Refrigerator", value: 32 },
@@ -652,6 +679,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 42,
     passRate: 68,
     targetsAchieved: 74,
+    purchased: 22,
     categories: [
       { name: "AC", value: 46 },
       { name: "Refrigerator", value: 38 },
@@ -676,6 +704,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 58,
     passRate: 52,
     targetsAchieved: 58,
+    purchased: 28,
     categories: [
       { name: "AC", value: 35 },
       { name: "Refrigerator", value: 28 },
@@ -700,6 +729,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 52,
     passRate: 54,
     targetsAchieved: 60,
+    purchased: 26,
     categories: [
       { name: "AC", value: 36 },
       { name: "Refrigerator", value: 28 },
@@ -724,6 +754,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 48,
     passRate: 56,
     targetsAchieved: 62,
+    purchased: 24,
     categories: [
       { name: "AC", value: 37 },
       { name: "Refrigerator", value: 29 },
@@ -748,6 +779,7 @@ const stateData: Record<string, StateData> = {
     productsTested: 60,
     passRate: 61,
     targetsAchieved: 67,
+    purchased: 30,
     categories: [
       { name: "AC", value: 42 },
       { name: "Refrigerator", value: 34 },
@@ -1160,6 +1192,7 @@ const metricConfig: Record<
   productsTested: { label: "Products Tested", unit: "", min: 40, max: 320 },
   passRate: { label: "Pass Rate", unit: "%", min: 50, max: 92 },
   targetsAchieved: { label: "Targets Achieved", unit: "%", min: 58, max: 98 },
+  purchased: { label: "Purchases", unit: "", min: 10, max: 200 },
 };
 
 // ── 5-Color Scale ─────────────────────────────────────────────────────────────
@@ -1827,6 +1860,7 @@ export default function IndiaMapDashboard() {
               <SelectItem value="productsTested">Products Tested</SelectItem>
               <SelectItem value="passRate">Pass Rate</SelectItem>
               <SelectItem value="targetsAchieved">Targets Achieved</SelectItem>
+              <SelectItem value="purchased">Purchase</SelectItem>
             </SelectContent>
           </Select>
         </div>

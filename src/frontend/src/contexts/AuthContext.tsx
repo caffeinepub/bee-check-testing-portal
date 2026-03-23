@@ -1,7 +1,12 @@
 import type React from "react";
 import { createContext, useContext, useState } from "react";
 
-export type UserRole = "director" | "official" | "purchaser" | "lab";
+export type UserRole =
+  | "director"
+  | "official"
+  | "purchaser"
+  | "lab"
+  | "labcoordinator";
 
 export interface AuthUser {
   email: string;
@@ -10,22 +15,15 @@ export interface AuthUser {
 }
 
 const demoAccounts: AuthUser[] = [
-  {
-    email: "director@bee.gov.in",
-    role: "director",
-    name: "BEE Director",
-  },
-  {
-    email: "official@bee.gov.in",
-    role: "official",
-    name: "BEE Official",
-  },
-  {
-    email: "purchaser@bee.gov.in",
-    role: "purchaser",
-    name: "SDA Purchaser",
-  },
+  { email: "director@bee.gov.in", role: "director", name: "BEE Director" },
+  { email: "official@bee.gov.in", role: "official", name: "BEE Official" },
+  { email: "purchaser@bee.gov.in", role: "purchaser", name: "SDA Purchaser" },
   { email: "lab@bee.gov.in", role: "lab", name: "NABL Lab Delhi" },
+  {
+    email: "labcoordinator@bee.gov.in",
+    role: "labcoordinator",
+    name: "Lab Coordinator",
+  },
 ];
 
 interface AuthContextType {

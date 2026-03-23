@@ -174,6 +174,8 @@ export default function OfficialPerformancePage() {
   const [pendingDialog, setPendingDialog] = useState(false);
   const [pendingOfficialName, setPendingOfficialName] = useState("");
   const [pendingOfficialKey, setPendingOfficialKey] = useState("");
+  const [filterOfficial, setFilterOfficial] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
 
   const users = [
     "U1 - Official A",
@@ -226,6 +228,57 @@ export default function OfficialPerformancePage() {
         </Button>
       </div>
 
+      <div className="flex flex-wrap gap-3 mb-4 items-center">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-600">
+            Filter by Official:
+          </span>
+          <Select value={filterOfficial} onValueChange={setFilterOfficial}>
+            <SelectTrigger className="h-8 w-44 text-xs border-blue-100">
+              <SelectValue placeholder="All Officials" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Officials</SelectItem>
+              <SelectItem value="U1 - Official A">U1 - Official A</SelectItem>
+              <SelectItem value="U2 - Official B">U2 - Official B</SelectItem>
+              <SelectItem value="U3 - Official C">U3 - Official C</SelectItem>
+              <SelectItem value="U4 - Official D">U4 - Official D</SelectItem>
+              <SelectItem value="U5 - Official E">U5 - Official E</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-600">
+            Filter by Category:
+          </span>
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="h-8 w-44 text-xs border-blue-100">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="Air Conditioner">Air Conditioner</SelectItem>
+              <SelectItem value="Refrigerator">Refrigerator</SelectItem>
+              <SelectItem value="Washing Machine">Washing Machine</SelectItem>
+              <SelectItem value="Ceiling Fan">Ceiling Fan</SelectItem>
+              <SelectItem value="LED Light">LED Light</SelectItem>
+              <SelectItem value="Geyser">Geyser</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {(filterOfficial !== "all" || filterCategory !== "all") && (
+          <button
+            type="button"
+            onClick={() => {
+              setFilterOfficial("all");
+              setFilterCategory("all");
+            }}
+            className="text-xs text-blue-600 underline hover:text-blue-800"
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
@@ -246,61 +299,71 @@ export default function OfficialPerformancePage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockOfficialPerformance.map((p, idx) => {
-              const officialKey = p.user.replace(/^U\d+ - /, "");
-              return (
-                <TableRow
-                  key={p.user}
-                  className="hover:bg-blue-50"
-                  data-ocid={`performance.row.${idx + 1}`}
-                >
-                  <TableCell className="text-sm font-medium">
-                    {p.user}
-                  </TableCell>
-                  <TableCell className="text-sm">{p.category}</TableCell>
-                  <TableCell className="text-sm font-bold">{p.total}</TableCell>
-                  <TableCell className="text-sm text-green-700 font-medium">
-                    {p.approved}
-                  </TableCell>
-                  <TableCell className="text-sm text-red-600 font-medium">
-                    {p.rejected}
-                  </TableCell>
-                  <TableCell>
-                    <button
-                      type="button"
-                      data-ocid={`performance.pending.button.${idx + 1}`}
-                      onClick={() =>
-                        openPendingDialog(officialKey, officialKey)
-                      }
-                      className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded-full"
-                      title={`View pending reports for ${officialKey}`}
-                    >
-                      <Badge
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium transition-all hover:scale-105 ${
-                          p.pending > 3
-                            ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                            : "bg-green-100 text-green-800 hover:bg-green-200"
-                        }`}
-                        variant="outline"
+            {mockOfficialPerformance
+              .filter((p) => {
+                const matchOfficial =
+                  filterOfficial === "all" || p.user === filterOfficial;
+                const matchCategory =
+                  filterCategory === "all" || p.category === filterCategory;
+                return matchOfficial && matchCategory;
+              })
+              .map((p, idx) => {
+                const officialKey = p.user.replace(/^U\d+ - /, "");
+                return (
+                  <TableRow
+                    key={p.user}
+                    className="hover:bg-blue-50"
+                    data-ocid={`performance.row.${idx + 1}`}
+                  >
+                    <TableCell className="text-sm font-medium">
+                      {p.user}
+                    </TableCell>
+                    <TableCell className="text-sm">{p.category}</TableCell>
+                    <TableCell className="text-sm font-bold">
+                      {p.total}
+                    </TableCell>
+                    <TableCell className="text-sm text-green-700 font-medium">
+                      {p.approved}
+                    </TableCell>
+                    <TableCell className="text-sm text-red-600 font-medium">
+                      {p.rejected}
+                    </TableCell>
+                    <TableCell>
+                      <button
+                        type="button"
+                        data-ocid={`performance.pending.button.${idx + 1}`}
+                        onClick={() =>
+                          openPendingDialog(officialKey, officialKey)
+                        }
+                        className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded-full"
+                        title={`View pending reports for ${officialKey}`}
                       >
-                        {p.pending}
-                      </Badge>
-                    </button>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        p.maxDaysPending > 5
-                          ? "bg-red-100 text-red-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {p.maxDaysPending} days
-                    </span>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                        <Badge
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium transition-all hover:scale-105 ${
+                            p.pending > 3
+                              ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                              : "bg-green-100 text-green-800 hover:bg-green-200"
+                          }`}
+                          variant="outline"
+                        >
+                          {p.pending}
+                        </Badge>
+                      </button>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          p.maxDaysPending > 5
+                            ? "bg-red-100 text-red-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {p.maxDaysPending} days
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
           </TableBody>
         </Table>
       </div>

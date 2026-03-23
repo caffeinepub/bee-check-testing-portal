@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { useState } from "react";
 import Layout from "./components/Layout";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { BlockedSamplesProvider } from "./contexts/BlockedSamplesContext";
 import LoginPage from "./pages/LoginPage";
 import ApplianceDataPage from "./pages/director/ApplianceDataPage";
 import DirectorDashboard from "./pages/director/DirectorDashboard";
@@ -13,12 +14,14 @@ import OfficialPerformancePage from "./pages/director/OfficialPerformancePage";
 import TargetCreationPage from "./pages/director/TargetCreationPage";
 import AssignedSamplesPage from "./pages/lab/AssignedSamplesPage";
 import LabDashboard from "./pages/lab/LabDashboard";
-import UpdateStatusPage from "./pages/lab/UpdateStatusPage";
 import UploadReportPage from "./pages/lab/UploadReportPage";
+import AssignLabPage from "./pages/labcoordinator/AssignLabPage";
+import LabCoordinatorDashboard from "./pages/labcoordinator/LabCoordinatorDashboard";
 import ApprovedReportsPage from "./pages/official/ApprovedReportsPage";
 import OfficialDashboard from "./pages/official/OfficialDashboard";
 import RejectedReportsPage from "./pages/official/RejectedReportsPage";
 import ReviewReportsPage from "./pages/official/ReviewReportsPage";
+import BlockedSamplePage from "./pages/purchaser/BlockedSamplePage";
 import MyPurchasesPage from "./pages/purchaser/MyPurchasesPage";
 import PurchaserDashboard from "./pages/purchaser/PurchaserDashboard";
 import SearchProductPage from "./pages/purchaser/SearchProductPage";
@@ -69,6 +72,8 @@ function AppContent() {
           return <SearchProductPage />;
         case "purchases":
           return <MyPurchasesPage />;
+        case "blocked":
+          return <BlockedSamplePage />;
         case "track":
           return <TrackStatusPage />;
         default:
@@ -78,13 +83,21 @@ function AppContent() {
     if (user.role === "lab") {
       switch (activePage) {
         case "samples":
-          return <AssignedSamplesPage />;
-        case "update":
-          return <UpdateStatusPage />;
+          return <AssignedSamplesPage defaultTab="tracking" />;
+        case "revert":
+          return <AssignedSamplesPage defaultTab="revert" />;
         case "upload":
           return <UploadReportPage />;
         default:
           return <LabDashboard onNavigate={setActivePage} />;
+      }
+    }
+    if (user.role === "labcoordinator") {
+      switch (activePage) {
+        case "assignlab":
+          return <AssignLabPage />;
+        default:
+          return <LabCoordinatorDashboard onNavigate={setActivePage} />;
       }
     }
     return null;
@@ -99,9 +112,11 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-      <Toaster />
-    </AuthProvider>
+    <BlockedSamplesProvider>
+      <AuthProvider>
+        <AppContent />
+        <Toaster />
+      </AuthProvider>
+    </BlockedSamplesProvider>
   );
 }

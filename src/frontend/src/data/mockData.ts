@@ -86,6 +86,371 @@ export type SampleStatus =
   | "Rejected"
   | "FinalFailure";
 
+// ── New Lab Status Sequence ──────────────────────────────────────────────────
+export type LabTrackingStatus =
+  | "InTransit"
+  | "ReachedLab"
+  | "TestScheduled"
+  | "UnderTesting"
+  | "TestDone"
+  | "ReportUploaded"
+  | "NFT"
+  | "InvoiceRaised";
+
+export const LAB_STATUS_SEQUENCE: LabTrackingStatus[] = [
+  "InTransit",
+  "ReachedLab",
+  "TestScheduled",
+  "UnderTesting",
+  "TestDone",
+  "ReportUploaded",
+  "NFT",
+  "InvoiceRaised",
+];
+
+export const LAB_STATUS_LABELS: Record<LabTrackingStatus, string> = {
+  InTransit: "In-Transit",
+  ReachedLab: "Reached Lab",
+  TestScheduled: "Test Scheduled",
+  UnderTesting: "Under Testing",
+  TestDone: "Test Done",
+  ReportUploaded: "Report Uploaded",
+  NFT: "NFT",
+  InvoiceRaised: "Invoice Raised",
+};
+
+export const HAS_ATTACHMENT: Record<LabTrackingStatus, boolean> = {
+  InTransit: false,
+  ReachedLab: false,
+  TestScheduled: false,
+  UnderTesting: false,
+  TestDone: false,
+  ReportUploaded: true,
+  NFT: false,
+  InvoiceRaised: true,
+};
+
+export interface StatusLogEntry {
+  status: LabTrackingStatus;
+  date: string;
+  remarks?: string;
+  attachmentName?: string;
+}
+
+export interface LabSample {
+  id: number;
+  categoryName: string;
+  brandName: string;
+  modelNumber: string;
+  starRating: number;
+  state: string;
+  labId: number;
+  labName: string;
+  purchaserName: string;
+  currentStatus: LabTrackingStatus;
+  statusLog: StatusLogEntry[];
+}
+
+export interface RevertedSample {
+  id: number;
+  categoryName: string;
+  brandName: string;
+  modelNumber: string;
+  starRating: number;
+  state: string;
+  returnReason: string;
+  returnDate: string;
+}
+
+export const labSamples: LabSample[] = [
+  {
+    id: 1,
+    categoryName: "Air Conditioner",
+    brandName: "Samsung",
+    modelNumber: "AC-5500-3S",
+    starRating: 3,
+    state: "Maharashtra",
+    labId: 1,
+    labName: "NABL Lab Delhi",
+    purchaserName: "Maharashtra SDA",
+    currentStatus: "InvoiceRaised",
+    statusLog: [
+      {
+        status: "InTransit",
+        date: "2024-04-10",
+        remarks: "Sample dispatched from Croma Mumbai",
+      },
+      {
+        status: "ReachedLab",
+        date: "2024-04-13",
+        remarks: "Sample received at NABL Lab Delhi",
+      },
+      {
+        status: "TestScheduled",
+        date: "2024-04-15",
+        remarks: "Test scheduled with Eng. Sharma",
+      },
+      {
+        status: "UnderTesting",
+        date: "2024-04-18",
+        remarks: "Testing commenced",
+      },
+      {
+        status: "TestDone",
+        date: "2024-04-28",
+        remarks: "All tests completed, results collated",
+      },
+      {
+        status: "ReportUploaded",
+        date: "2024-05-01",
+        remarks: "Test report uploaded",
+        attachmentName: "Samsung_AC5500_TestReport.pdf",
+      },
+      {
+        status: "NFT",
+        date: "2024-05-02",
+        remarks: "0 units found not fit for test",
+      },
+      {
+        status: "InvoiceRaised",
+        date: "2024-05-05",
+        remarks: "Invoice raised for testing services",
+        attachmentName: "Invoice_NABL_001.pdf",
+      },
+    ],
+  },
+  {
+    id: 14,
+    categoryName: "Air Conditioner",
+    brandName: "Hitachi",
+    modelNumber: "HIT-RAU318HVDO",
+    starRating: 3,
+    state: "Rajasthan",
+    labId: 1,
+    labName: "NABL Lab Delhi",
+    purchaserName: "Rajasthan SDA",
+    currentStatus: "ReportUploaded",
+    statusLog: [
+      {
+        status: "InTransit",
+        date: "2024-04-05",
+        remarks: "Dispatched from Jaipur",
+      },
+      {
+        status: "ReachedLab",
+        date: "2024-04-08",
+        remarks: "Received in good condition",
+      },
+      {
+        status: "TestScheduled",
+        date: "2024-04-10",
+        remarks: "Test slot allocated",
+      },
+      {
+        status: "UnderTesting",
+        date: "2024-04-14",
+        remarks: "Testing in progress",
+      },
+      { status: "TestDone", date: "2024-04-25", remarks: "Testing completed" },
+      {
+        status: "ReportUploaded",
+        date: "2024-04-28",
+        remarks: "Report submitted to BEE Official",
+        attachmentName: "Hitachi_RAU318_TestReport.pdf",
+      },
+    ],
+  },
+  {
+    id: 7,
+    categoryName: "LED Light",
+    brandName: "Philips",
+    modelNumber: "PHL-LED-20W",
+    starRating: 4,
+    state: "Uttar Pradesh",
+    labId: 1,
+    labName: "NABL Lab Delhi",
+    purchaserName: "UP SDA",
+    currentStatus: "InTransit",
+    statusLog: [
+      {
+        status: "InTransit",
+        date: "2024-05-05",
+        remarks: "Sample dispatched from Lucknow",
+      },
+    ],
+  },
+  {
+    id: 25,
+    categoryName: "Geyser",
+    brandName: "Racold",
+    modelNumber: "RAC-PRONTO-25L",
+    starRating: 4,
+    state: "Uttar Pradesh",
+    labId: 1,
+    labName: "NABL Lab Delhi",
+    purchaserName: "UP SDA",
+    currentStatus: "ReachedLab",
+    statusLog: [
+      { status: "InTransit", date: "2024-05-06", remarks: "Sample dispatched" },
+      {
+        status: "ReachedLab",
+        date: "2024-05-09",
+        remarks: "Sample received at lab",
+      },
+    ],
+  },
+  {
+    id: 6,
+    categoryName: "Ceiling Fan",
+    brandName: "Havells",
+    modelNumber: "HV-FAN-1200",
+    starRating: 5,
+    state: "Rajasthan",
+    labId: 1,
+    labName: "NABL Lab Delhi",
+    purchaserName: "Rajasthan SDA",
+    currentStatus: "UnderTesting",
+    statusLog: [
+      {
+        status: "InTransit",
+        date: "2024-05-02",
+        remarks: "Dispatched from Metro Cash & Carry",
+      },
+      { status: "ReachedLab", date: "2024-05-04", remarks: "Sample received" },
+      {
+        status: "TestScheduled",
+        date: "2024-05-06",
+        remarks: "Test scheduled",
+      },
+      {
+        status: "UnderTesting",
+        date: "2024-05-08",
+        remarks: "Energy efficiency testing started",
+      },
+    ],
+  },
+  {
+    id: 16,
+    categoryName: "Refrigerator",
+    brandName: "Haier",
+    modelNumber: "HAI-HRB-3654",
+    starRating: 4,
+    state: "Delhi",
+    labId: 1,
+    labName: "NABL Lab Delhi",
+    purchaserName: "Delhi SDA",
+    currentStatus: "TestDone",
+    statusLog: [
+      {
+        status: "InTransit",
+        date: "2024-03-30",
+        remarks: "Sample dispatched from Delhi retailer",
+      },
+      { status: "ReachedLab", date: "2024-04-01", remarks: "Received" },
+      {
+        status: "TestScheduled",
+        date: "2024-04-03",
+        remarks: "Test slot assigned",
+      },
+      {
+        status: "UnderTesting",
+        date: "2024-04-07",
+        remarks: "Tests commenced",
+      },
+      {
+        status: "TestDone",
+        date: "2024-04-22",
+        remarks: "All tests done, report being prepared",
+      },
+    ],
+  },
+  {
+    id: 12,
+    categoryName: "Geyser",
+    brandName: "Havells",
+    modelNumber: "HV-GEY-25L",
+    starRating: 4,
+    state: "Delhi",
+    labId: 1,
+    labName: "NABL Lab Delhi",
+    purchaserName: "Delhi SDA",
+    currentStatus: "NFT",
+    statusLog: [
+      {
+        status: "InTransit",
+        date: "2024-04-10",
+        remarks: "Dispatched from Delhi",
+      },
+      { status: "ReachedLab", date: "2024-04-12", remarks: "Sample received" },
+      {
+        status: "TestScheduled",
+        date: "2024-04-14",
+        remarks: "Test slot assigned",
+      },
+      {
+        status: "UnderTesting",
+        date: "2024-04-16",
+        remarks: "Testing commenced",
+      },
+      { status: "TestDone", date: "2024-04-20", remarks: "Testing completed" },
+      {
+        status: "ReportUploaded",
+        date: "2024-04-22",
+        remarks: "Report uploaded",
+        attachmentName: "Havells_Geyser_Report.pdf",
+      },
+      {
+        status: "NFT",
+        date: "2024-04-23",
+        remarks: "2 units declared not fit for test due to electrical defect",
+      },
+    ],
+  },
+];
+
+export const revertedFromBEE: RevertedSample[] = [
+  {
+    id: 101,
+    categoryName: "Air Conditioner",
+    brandName: "Voltas",
+    modelNumber: "VOL-2T-5S",
+    starRating: 5,
+    state: "Delhi",
+    returnReason: "Label Mismatch",
+    returnDate: "2024-05-10",
+  },
+  {
+    id: 102,
+    categoryName: "Washing Machine",
+    brandName: "LG",
+    modelNumber: "LG-FHT1006",
+    starRating: 3,
+    state: "Telangana",
+    returnReason: "Incomplete Documentation",
+    returnDate: "2024-05-08",
+  },
+  {
+    id: 103,
+    categoryName: "Refrigerator",
+    brandName: "Godrej",
+    modelNumber: "GOD-RT-2314",
+    starRating: 3,
+    state: "Tamil Nadu",
+    returnReason: "Wrong Model Sent",
+    returnDate: "2024-05-06",
+  },
+  {
+    id: 104,
+    categoryName: "LED Light",
+    brandName: "Syska",
+    modelNumber: "SSK-LED-15W",
+    starRating: 3,
+    state: "Karnataka",
+    returnReason: "Test Certificate Expired",
+    returnDate: "2024-05-04",
+  },
+];
+
 export interface MockSample {
   id: number;
   categoryId: number;
@@ -517,7 +882,6 @@ export interface MockReport {
 }
 
 // ── 7 reports for BEE Official dashboard (one official's view)
-// Total=7 | Approved=2 | Pending=4 | Rejected=1
 export const mockReports: MockReport[] = [
   {
     id: 1,
@@ -607,8 +971,6 @@ export const mockReports: MockReport[] = [
   },
 ];
 
-// ── Targets: qty totals = 245 | purchased totals = 67
-// These numbers align with Director Dashboard KPIs (Target=245, Purchased=67)
 export const mockTargets = [
   {
     id: 1,
@@ -698,7 +1060,6 @@ export const mockTargets = [
     status: "Active",
     purchased: 2,
   },
-  // Grand total: qty=245, purchased=67
 ];
 
 export const mockFinancials = [
@@ -763,11 +1124,6 @@ export const mockFinancials = [
   },
 ];
 
-// ── Official Performance
-// Pending counts match the clickable pending-dialog entry counts exactly:
-//   Official A → 5 pending   Official B → 3 pending
-//   Official C → 7 pending   Official D → 2 pending   Official E → 3 pending
-// total = approved + rejected + pending per row
 export const mockOfficialPerformance = [
   {
     user: "U1 - Official A",
@@ -815,6 +1171,3 @@ export const mockOfficialPerformance = [
     maxDaysPending: 4,
   },
 ];
-// Grand totals across all officials:
-// Total reports reviewed = 67 | Approved = 39 | Rejected = 8 | Pending = 20
-// (Matches Director Dashboard pipeline: Purchased=67 samples sent for review)

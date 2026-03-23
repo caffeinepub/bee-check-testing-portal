@@ -1,67 +1,85 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, Package, TestTube, Truck } from "lucide-react";
-import { mockSamples } from "../../data/mockData";
+import {
+  Calendar,
+  Clock,
+  Package,
+  RotateCcw,
+  TestTube,
+  Truck,
+} from "lucide-react";
+import {
+  LAB_STATUS_LABELS,
+  type LabTrackingStatus,
+  labSamples,
+  revertedFromBEE,
+} from "../../data/mockData";
 
 interface Props {
   onNavigate: (page: string) => void;
 }
 
 export default function LabDashboard({ onNavigate }: Props) {
-  const labId = 1;
-  const mySamples = mockSamples.filter((s) => s.labId === labId);
-
   const kpis = [
     {
-      label: "Sample Received",
-      value: mySamples.filter((s) =>
-        [
-          "SampleReceived",
-          "FitForTest",
-          "TestScheduled",
-          "InTesting",
-          "SampleTested",
-          "ReportUploaded",
-        ].includes(s.status),
-      ).length,
-      icon: <Package className="text-blue-600" size={22} />,
-      color: "#dbeafe",
-      nav: "samples",
-    },
-    {
-      label: "Sample Tested",
-      value: mySamples.filter((s) =>
-        ["SampleTested", "ReportUploaded", "Approved", "Rejected"].includes(
-          s.status,
-        ),
-      ).length,
-      icon: <TestTube className="text-green-600" size={22} />,
-      color: "#dcfce7",
-      nav: "samples",
-    },
-    {
-      label: "Pending Test",
-      value: mySamples.filter((s) =>
-        ["SampleReceived", "FitForTest"].includes(s.status),
-      ).length,
-      icon: <Clock className="text-yellow-600" size={22} />,
-      color: "#fef3c7",
-      nav: "update",
-    },
-    {
-      label: "In Transit",
-      value: mySamples.filter((s) => s.status === "InTransit").length,
+      label: "In-Transit",
+      value: labSamples.filter((s) => s.currentStatus === "InTransit").length,
       icon: <Truck className="text-orange-600" size={22} />,
       color: "#ffedd5",
       nav: "samples",
     },
     {
+      label: "Under Testing",
+      value: labSamples.filter((s) => s.currentStatus === "UnderTesting")
+        .length,
+      icon: <TestTube className="text-blue-600" size={22} />,
+      color: "#dbeafe",
+      nav: "samples",
+    },
+    {
+      label: "Test Done",
+      value: labSamples.filter((s) => s.currentStatus === "TestDone").length,
+      icon: <Package className="text-green-600" size={22} />,
+      color: "#dcfce7",
+      nav: "samples",
+    },
+    {
       label: "Test Scheduled",
-      value: mySamples.filter((s) => s.status === "TestScheduled").length,
+      value: labSamples.filter((s) => s.currentStatus === "TestScheduled")
+        .length,
       icon: <Calendar className="text-purple-600" size={22} />,
       color: "#f3e8ff",
       nav: "samples",
     },
+    {
+      label: "Invoice Raised",
+      value: labSamples.filter((s) => s.currentStatus === "InvoiceRaised")
+        .length,
+      icon: <Clock className="text-teal-600" size={22} />,
+      color: "#ccfbf1",
+      nav: "samples",
+    },
+    {
+      label: "Reverted from BEE",
+      value: revertedFromBEE.length,
+      icon: <RotateCcw className="text-red-600" size={22} />,
+      color: "#fee2e2",
+      nav: "revert",
+    },
   ];
+
+  const statusColorClass = (status: LabTrackingStatus): string => {
+    const map: Record<LabTrackingStatus, string> = {
+      InTransit: "bg-orange-100 text-orange-800",
+      ReachedLab: "bg-blue-100 text-blue-800",
+      TestScheduled: "bg-purple-100 text-purple-800",
+      UnderTesting: "bg-yellow-100 text-yellow-800",
+      TestDone: "bg-teal-100 text-teal-800",
+      ReportUploaded: "bg-indigo-100 text-indigo-800",
+      NFT: "bg-red-100 text-red-800",
+      InvoiceRaised: "bg-green-100 text-green-800",
+    };
+    return map[status] ?? "bg-gray-100 text-gray-700";
+  };
 
   return (
     <div>
@@ -70,10 +88,11 @@ export default function LabDashboard({ onNavigate }: Props) {
           Lab Dashboard
         </h2>
         <p className="text-gray-500 text-sm">
-          NABL Lab Delhi - Check Testing Overview
+          NABL Lab Delhi — Check Testing Overview
         </p>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         {kpis.map((kpi) => (
           <button
             type="button"
@@ -91,42 +110,37 @@ export default function LabDashboard({ onNavigate }: Props) {
                   {kpi.icon}
                 </div>
                 <p className="text-2xl font-bold">{kpi.value}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{kpi.label}</p>
+                <p className="text-xs text-gray-500 mt-0.5 leading-tight">
+                  {kpi.label}
+                </p>
               </CardContent>
             </Card>
           </button>
         ))}
       </div>
+
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
         <h3 className="font-semibold text-gray-800 mb-3 text-sm">
           Recent Sample Activity
         </h3>
         <div className="space-y-2">
-          {mySamples.map((s) => (
+          {labSamples.map((s) => (
             <div
               key={s.id}
               className="flex justify-between items-center p-2 rounded border border-gray-100 hover:bg-gray-50"
             >
               <div>
                 <p className="text-sm font-medium">
-                  {s.brandName} - {s.modelNumber}
+                  {s.brandName} — {s.modelNumber}
                 </p>
                 <p className="text-xs text-gray-500">
                   {s.categoryName} | {s.state}
                 </p>
               </div>
               <span
-                className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  s.status === "Approved"
-                    ? "bg-green-100 text-green-800"
-                    : s.status === "InTesting"
-                      ? "bg-blue-100 text-blue-800"
-                      : s.status === "InTransit"
-                        ? "bg-orange-100 text-orange-800"
-                        : "bg-gray-100 text-gray-700"
-                }`}
+                className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColorClass(s.currentStatus)}`}
               >
-                {s.status}
+                {LAB_STATUS_LABELS[s.currentStatus]}
               </span>
             </div>
           ))}
