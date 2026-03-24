@@ -161,7 +161,7 @@ export default function LoginPage() {
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-8">
               <img
-                src="/assets/uploads/image-5-1.png"
+                src="/assets/uploads/bee_logo-019d1e60-576f-76be-ad3c-c0e444c648f1-1.png"
                 alt="BEE Logo"
                 className="w-14 h-14 rounded-full object-contain bg-white flex-shrink-0"
               />
@@ -266,7 +266,7 @@ export default function LoginPage() {
             <div className="w-full max-w-md">
               <div className="lg:hidden flex items-center gap-3 mb-8">
                 <img
-                  src="/assets/uploads/image-5-1.png"
+                  src="/assets/uploads/bee_logo-019d1e60-576f-76be-ad3c-c0e444c648f1-1.png"
                   alt="BEE Logo"
                   className="w-10 h-10 rounded-full object-contain bg-white flex-shrink-0"
                 />

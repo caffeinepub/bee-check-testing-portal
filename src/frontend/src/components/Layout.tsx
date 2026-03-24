@@ -145,6 +145,9 @@ const roleAccentColors: Record<string, string> = {
   labcoordinator: "#06b6d4",
 };
 
+const NEW_LOGO =
+  "/assets/uploads/bee_logo-019d1e60-576f-76be-ad3c-c0e444c648f1-1.png";
+
 export default function Layout({
   children,
   activePage,
@@ -187,7 +190,7 @@ export default function Layout({
         >
           <div className="flex items-center gap-3">
             <img
-              src="/assets/uploads/image-5-1.png"
+              src={NEW_LOGO}
               alt="BEE Logo"
               className="w-12 h-12 rounded-full object-contain bg-white flex-shrink-0"
             />
@@ -303,7 +306,7 @@ export default function Layout({
         >
           <div className="flex items-center gap-3">
             <img
-              src="/assets/uploads/image-5-1.png"
+              src={NEW_LOGO}
               alt="BEE Logo"
               className="w-9 h-9 rounded-full object-contain bg-white border border-gray-200"
             />
