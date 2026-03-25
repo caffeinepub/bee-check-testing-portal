@@ -3,7 +3,10 @@ import { useState } from "react";
 import Layout from "./components/Layout";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { BlockedSamplesProvider } from "./contexts/BlockedSamplesContext";
+import { SecondCheckProvider } from "./contexts/SecondCheckContext";
 import LoginPage from "./pages/LoginPage";
+import ComplianceOfficerDashboard from "./pages/complianceofficer/ComplianceOfficerDashboard";
+import SchedulingApprovalsPage from "./pages/complianceofficer/SchedulingApprovalsPage";
 import ApplianceDataPage from "./pages/director/ApplianceDataPage";
 import DirectorDashboard from "./pages/director/DirectorDashboard";
 import DirectorTestingPage from "./pages/director/DirectorTestingPage";
@@ -14,10 +17,11 @@ import OfficialPerformancePage from "./pages/director/OfficialPerformancePage";
 import TargetCreationPage from "./pages/director/TargetCreationPage";
 import AssignedSamplesPage from "./pages/lab/AssignedSamplesPage";
 import LabDashboard from "./pages/lab/LabDashboard";
-import UploadReportPage from "./pages/lab/UploadReportPage";
+import LabSecondCheckPage from "./pages/lab/LabSecondCheckPage";
 import AssignLabPage from "./pages/labcoordinator/AssignLabPage";
 import LabCoordinatorDashboard from "./pages/labcoordinator/LabCoordinatorDashboard";
 import ApprovedReportsPage from "./pages/official/ApprovedReportsPage";
+import LabResultsPage from "./pages/official/LabResultsPage";
 import OfficialDashboard from "./pages/official/OfficialDashboard";
 import RejectedReportsPage from "./pages/official/RejectedReportsPage";
 import ReviewReportsPage from "./pages/official/ReviewReportsPage";
@@ -25,6 +29,7 @@ import BlockedSamplePage from "./pages/purchaser/BlockedSamplePage";
 import MyPurchasesPage from "./pages/purchaser/MyPurchasesPage";
 import PurchaserDashboard from "./pages/purchaser/PurchaserDashboard";
 import SearchProductPage from "./pages/purchaser/SearchProductPage";
+import SecondCheckTestPage from "./pages/purchaser/SecondCheckTestPage";
 
 function AppContent() {
   const { user } = useAuth();
@@ -61,6 +66,8 @@ function AppContent() {
           return <ApprovedReportsPage />;
         case "rejected":
           return <RejectedReportsPage />;
+        case "labresults":
+          return <LabResultsPage />;
         default:
           return <OfficialDashboard onNavigate={setActivePage} />;
       }
@@ -73,6 +80,8 @@ function AppContent() {
           return <MyPurchasesPage />;
         case "blocked":
           return <BlockedSamplePage />;
+        case "secondcheck":
+          return <SecondCheckTestPage />;
         default:
           return <PurchaserDashboard onNavigate={setActivePage} />;
       }
@@ -83,8 +92,10 @@ function AppContent() {
           return <AssignedSamplesPage defaultTab="tracking" />;
         case "revert":
           return <AssignedSamplesPage defaultTab="revert" />;
-        case "upload":
-          return <UploadReportPage />;
+        case "testreport":
+          return <AssignedSamplesPage defaultTab="testreport" />;
+        case "secondcheck":
+          return <LabSecondCheckPage />;
         default:
           return <LabDashboard onNavigate={setActivePage} />;
       }
@@ -95,6 +106,14 @@ function AppContent() {
           return <AssignLabPage />;
         default:
           return <LabCoordinatorDashboard onNavigate={setActivePage} />;
+      }
+    }
+    if (user.role === "complianceofficer") {
+      switch (activePage) {
+        case "scheduling":
+          return <SchedulingApprovalsPage />;
+        default:
+          return <ComplianceOfficerDashboard onNavigate={setActivePage} />;
       }
     }
     return null;
@@ -109,11 +128,13 @@ function AppContent() {
 
 export default function App() {
   return (
-    <BlockedSamplesProvider>
-      <AuthProvider>
-        <AppContent />
-        <Toaster />
-      </AuthProvider>
-    </BlockedSamplesProvider>
+    <SecondCheckProvider>
+      <BlockedSamplesProvider>
+        <AuthProvider>
+          <AppContent />
+          <Toaster />
+        </AuthProvider>
+      </BlockedSamplesProvider>
+    </SecondCheckProvider>
   );
 }

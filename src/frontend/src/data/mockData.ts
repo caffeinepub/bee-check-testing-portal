@@ -93,7 +93,8 @@ export type LabTrackingStatus =
   | "TestScheduled"
   | "UnderTesting"
   | "TestDone"
-  | "ReportUploaded"
+  | "Pass"
+  | "Fail"
   | "NFT"
   | "InvoiceRaised";
 
@@ -104,15 +105,44 @@ export const LAB_STATUS_SEQUENCE_TEST: LabTrackingStatus[] = [
   "TestScheduled",
   "UnderTesting",
   "TestDone",
-  "ReportUploaded",
   "InvoiceRaised",
 ];
 
-// NFT path: sample declared Not Fit for Test right after Reached Lab — terminal, no further steps
+// NFT path: sample declared Not Fit for Test — terminal, no further steps
 export const LAB_STATUS_SEQUENCE_NFT: LabTrackingStatus[] = [
   "InTransit",
   "ReachedLab",
   "NFT",
+];
+
+// NFT after TestScheduled path
+export const LAB_STATUS_SEQUENCE_NFT_FROM_SCHEDULED: LabTrackingStatus[] = [
+  "InTransit",
+  "ReachedLab",
+  "TestScheduled",
+  "NFT",
+];
+
+// Pass path
+export const LAB_STATUS_SEQUENCE_PASS: LabTrackingStatus[] = [
+  "InTransit",
+  "ReachedLab",
+  "TestScheduled",
+  "UnderTesting",
+  "TestDone",
+  "Pass",
+  "InvoiceRaised",
+];
+
+// Fail path
+export const LAB_STATUS_SEQUENCE_FAIL: LabTrackingStatus[] = [
+  "InTransit",
+  "ReachedLab",
+  "TestScheduled",
+  "UnderTesting",
+  "TestDone",
+  "Fail",
+  "InvoiceRaised",
 ];
 
 // LAB_STATUS_SEQUENCE points to test path for backward compatibility
@@ -123,7 +153,16 @@ export function getPathForSample(sample: LabSample): LabTrackingStatus[] {
   const hasTestScheduled = sample.statusLog.some(
     (e) => e.status === "TestScheduled",
   );
+  const hasPass =
+    sample.statusLog.some((e) => e.status === "Pass") ||
+    sample.currentStatus === "Pass";
+  const hasFail =
+    sample.statusLog.some((e) => e.status === "Fail") ||
+    sample.currentStatus === "Fail";
   if (hasNFT && !hasTestScheduled) return LAB_STATUS_SEQUENCE_NFT;
+  if (hasNFT && hasTestScheduled) return LAB_STATUS_SEQUENCE_NFT_FROM_SCHEDULED;
+  if (hasPass) return LAB_STATUS_SEQUENCE_PASS;
+  if (hasFail) return LAB_STATUS_SEQUENCE_FAIL;
   return LAB_STATUS_SEQUENCE_TEST;
 }
 
@@ -133,7 +172,8 @@ export const LAB_STATUS_LABELS: Record<LabTrackingStatus, string> = {
   TestScheduled: "Test Scheduled",
   UnderTesting: "Under Testing",
   TestDone: "Test Done",
-  ReportUploaded: "Report Uploaded",
+  Pass: "Pass",
+  Fail: "Fail",
   NFT: "NFT (Not Fit for Test)",
   InvoiceRaised: "Invoice Raised",
 };
@@ -144,10 +184,101 @@ export const HAS_ATTACHMENT: Record<LabTrackingStatus, boolean> = {
   TestScheduled: false,
   UnderTesting: false,
   TestDone: false,
-  ReportUploaded: true,
+  Pass: true,
+  Fail: true,
   NFT: true,
   InvoiceRaised: true,
 };
+
+// Terminal statuses — no further actions after these
+export const TERMINAL_LAB_STATUSES: LabTrackingStatus[] = [
+  "NFT",
+  "InvoiceRaised",
+];
+
+// Test Report entry (Pass/Fail/NFT cases forwarded to BEE Official)
+export interface TestReportEntry {
+  sampleId: number;
+  categoryName: string;
+  brandName: string;
+  modelNumber: string;
+  starRating: number;
+  state: string;
+  labName: string;
+  finalStatus: "Pass" | "Fail" | "NFT";
+  date: string;
+  remarks?: string;
+  documents: { name: string; type: string }[];
+  beeVerificationStatus: "Pending" | "Verified" | "SendBack";
+}
+
+export const testReportEntries: TestReportEntry[] = [
+  {
+    sampleId: 1,
+    categoryName: "Air Conditioner",
+    brandName: "Samsung",
+    modelNumber: "AC-5500-3S",
+    starRating: 3,
+    state: "Maharashtra",
+    labName: "NABL Lab Delhi",
+    finalStatus: "Pass",
+    date: "2024-05-01",
+    remarks: "All energy efficiency parameters met. Star rating confirmed.",
+    documents: [
+      { name: "Samsung_AC5500_StarLabel.png", type: "Star Label Image" },
+      {
+        name: "Samsung_AC5500_ApplianceFront.jpg",
+        type: "Appliance Photo - Front",
+      },
+      {
+        name: "Samsung_AC5500_ApplianceBack.jpg",
+        type: "Appliance Photo - Back",
+      },
+      { name: "Samsung_AC5500_NamePlate.jpg", type: "Name Plate Photo" },
+      { name: "Samsung_AC5500_TestReport.pdf", type: "Test Report" },
+    ],
+    beeVerificationStatus: "Verified",
+  },
+  {
+    sampleId: 10,
+    categoryName: "Washing Machine",
+    brandName: "LG",
+    modelNumber: "LG-FHT1006",
+    starRating: 3,
+    state: "Telangana",
+    labName: "ETDC Chennai",
+    finalStatus: "Fail",
+    date: "2024-05-01",
+    remarks:
+      "Energy consumption exceeded BEE threshold. Does not qualify for star rating.",
+    documents: [
+      {
+        name: "LG_FHT1006_ApplianceFront.jpg",
+        type: "Appliance Photo - Front",
+      },
+      { name: "LG_FHT1006_NamePlate.jpg", type: "Name Plate Photo" },
+      { name: "LG_FHT1006_TestReport.pdf", type: "Test Report" },
+    ],
+    beeVerificationStatus: "Pending",
+  },
+  {
+    sampleId: 12,
+    categoryName: "Geyser",
+    brandName: "Havells",
+    modelNumber: "HV-GEY-25L",
+    starRating: 4,
+    state: "Delhi",
+    labName: "NABL Lab Delhi",
+    finalStatus: "NFT",
+    date: "2024-04-14",
+    remarks:
+      "2 units declared not fit for test due to electrical defect. Physical damage observed.",
+    documents: [
+      { name: "NFT_Havells_Geyser_Evidence.pdf", type: "NFT Evidence" },
+    ],
+    beeVerificationStatus: "Pending",
+  },
+];
 
 export interface StatusLogEntry {
   status: LabTrackingStatus;
@@ -220,9 +351,9 @@ export const labSamples: LabSample[] = [
         remarks: "All tests completed, results collated",
       },
       {
-        status: "ReportUploaded",
+        status: "Pass",
         date: "2024-05-01",
-        remarks: "Test report uploaded",
+        remarks: "Test passed. All parameters within BEE standards.",
         attachmentName: "Samsung_AC5500_TestReport.pdf",
       },
       {
@@ -243,7 +374,7 @@ export const labSamples: LabSample[] = [
     labId: 1,
     labName: "NABL Lab Delhi",
     purchaserName: "Rajasthan SDA",
-    currentStatus: "ReportUploaded",
+    currentStatus: "Pass",
     statusLog: [
       {
         status: "InTransit",
@@ -267,9 +398,9 @@ export const labSamples: LabSample[] = [
       },
       { status: "TestDone", date: "2024-04-25", remarks: "Testing completed" },
       {
-        status: "ReportUploaded",
+        status: "Pass",
         date: "2024-04-28",
-        remarks: "Report submitted to BEE Official",
+        remarks: "All tests passed. Report confirmed by lab.",
         attachmentName: "Hitachi_RAU318_TestReport.pdf",
       },
     ],

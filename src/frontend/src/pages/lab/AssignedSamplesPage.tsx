@@ -23,21 +23,24 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  Download,
+  FileText,
   Paperclip,
   RotateCcw,
   Upload,
+  XCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  HAS_ATTACHMENT,
   LAB_STATUS_LABELS,
-  LAB_STATUS_SEQUENCE_TEST,
-  type LabSample,
   type LabTrackingStatus,
   type StatusLogEntry,
+  TERMINAL_LAB_STATUSES,
+  type TestReportEntry,
   getPathForSample,
   labSamples as initialLabSamples,
+  testReportEntries as initialTestReports,
   revertedFromBEE,
 } from "../../data/mockData";
 
@@ -45,115 +48,288 @@ interface Props {
   defaultTab?: string;
 }
 
-const STATUS_COLORS: Record<LabTrackingStatus, string> = {
+const STATUS_COLORS: Partial<Record<LabTrackingStatus, string>> = {
   InTransit: "bg-orange-100 text-orange-800 border-orange-200",
   ReachedLab: "bg-blue-100 text-blue-800 border-blue-200",
   TestScheduled: "bg-purple-100 text-purple-800 border-purple-200",
   UnderTesting: "bg-yellow-100 text-yellow-800 border-yellow-200",
   TestDone: "bg-teal-100 text-teal-800 border-teal-200",
-  ReportUploaded: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  Pass: "bg-green-100 text-green-800 border-green-200",
+  Fail: "bg-red-100 text-red-800 border-red-200",
   NFT: "bg-red-100 text-red-800 border-red-200",
   InvoiceRaised: "bg-green-100 text-green-800 border-green-200",
 };
 
-// NFT is a terminal status — no further actions after it
-const TERMINAL_STATUSES: LabTrackingStatus[] = ["NFT", "InvoiceRaised"];
+function statusColorClass(s: LabTrackingStatus) {
+  return STATUS_COLORS[s] ?? "bg-gray-100 text-gray-800 border-gray-200";
+}
+
+// Branch choice types
+type BranchChoice = "TestScheduled" | "NFT" | "UnderTesting" | null;
+type PassFailChoice = "Pass" | "Fail" | null;
+
+// Document upload field
+interface DocField {
+  label: string;
+  accept: string;
+  maxMB: number;
+  multiple?: boolean;
+  maxFiles?: number;
+  hint?: string;
+  file?: File | null;
+  files?: File[];
+}
 
 export default function AssignedSamplesPage({ defaultTab }: Props) {
-  const [samples, setSamples] = useState<LabSample[]>(initialLabSamples);
+  const [samples, setSamples] = useState(initialLabSamples);
+  const [testReports, setTestReports] =
+    useState<TestReportEntry[]>(initialTestReports);
   const [activeTab, setActiveTab] = useState(
-    defaultTab === "revert" ? "revert" : "tracking",
+    defaultTab === "revert"
+      ? "revert"
+      : defaultTab === "testreport"
+        ? "testreport"
+        : "tracking",
   );
 
-  // Update Status Dialog
-  const [updateSample, setUpdateSample] = useState<LabSample | null>(null);
+  // Update Status Dialog state
+  const [updateSample, setUpdateSample] = useState<
+    (typeof initialLabSamples)[0] | null
+  >(null);
   const [updateDate, setUpdateDate] = useState("");
   const [updateRemarks, setUpdateRemarks] = useState("");
-  const [reachedLabChoice, setReachedLabChoice] = useState<
-    "TestScheduled" | "NFT" | null
-  >(null);
+  // Branch after ReachedLab: TestScheduled or NFT
+  const [reachedLabChoice, setReachedLabChoice] = useState<BranchChoice>(null);
+  // Branch after TestScheduled: UnderTesting or NFT
+  const [scheduledChoice, setScheduledChoice] = useState<BranchChoice>(null);
+  // Pass/Fail choice after TestDone
+  const [passFailChoice, setPassFailChoice] = useState<PassFailChoice>(null);
+  // Document fields for Pass/Fail
+  const [docFields, setDocFields] = useState<DocField[]>([
+    {
+      label: "Star Label Image",
+      accept: ".jpg,.jpeg,.png",
+      maxMB: 10,
+      file: null,
+      hint: "JPG/PNG, max 10 MB",
+    },
+    {
+      label: "Appliance Photos (Front, Back, Side)",
+      accept: ".jpg,.jpeg,.png",
+      maxMB: 5,
+      multiple: true,
+      maxFiles: 5,
+      files: [],
+      hint: "JPG/PNG, up to 5 photos",
+    },
+    {
+      label: "Name Plate Photo",
+      accept: ".jpg,.jpeg,.png",
+      maxMB: 5,
+      file: null,
+      hint: "JPG/PNG, max 5 MB",
+    },
+    {
+      label: "Test Report",
+      accept: ".pdf",
+      maxMB: 10,
+      file: null,
+      hint: "PDF only, max 10 MB",
+    },
+  ]);
 
   // View Log Dialog
-  const [logSample, setLogSample] = useState<LabSample | null>(null);
+  const [logSample, setLogSample] = useState<
+    (typeof initialLabSamples)[0] | null
+  >(null);
 
-  const getNextStatus = (
-    current: LabTrackingStatus,
-    choice?: "TestScheduled" | "NFT",
-  ): LabTrackingStatus | null => {
-    // NFT is terminal — no further status after it
-    if (current === "NFT") return null;
-    if (current === "InvoiceRaised") return null;
-    if (current === "ReachedLab") return choice || null;
-    const idx = LAB_STATUS_SEQUENCE_TEST.indexOf(current);
-    if (idx !== -1 && idx < LAB_STATUS_SEQUENCE_TEST.length - 1)
-      return LAB_STATUS_SEQUENCE_TEST[idx + 1];
-    return null;
+  // Documents view dialog
+  const [docsEntry, setDocsEntry] = useState<TestReportEntry | null>(null);
+
+  // BEE verification dialog
+  const [verifyEntry, setVerifyEntry] = useState<TestReportEntry | null>(null);
+
+  const getBranchNextStatus = (): LabTrackingStatus | null => {
+    if (!updateSample) return null;
+    const cur = updateSample.currentStatus;
+    if (cur === "ReachedLab")
+      return (reachedLabChoice as LabTrackingStatus) || null;
+    if (cur === "TestScheduled")
+      return (scheduledChoice as LabTrackingStatus) || null;
+    if (cur === "TestDone") return passFailChoice;
+    // Linear steps
+    const linearMap: Partial<Record<LabTrackingStatus, LabTrackingStatus>> = {
+      InTransit: "ReachedLab",
+      UnderTesting: "TestDone",
+      Pass: "InvoiceRaised",
+      Fail: "InvoiceRaised",
+    };
+    return linearMap[cur] ?? null;
   };
 
-  const openUpdateDialog = (sample: LabSample) => {
-    if (TERMINAL_STATUSES.includes(sample.currentStatus)) {
-      const label =
+  const isBranchStatus = (s: LabTrackingStatus) =>
+    s === "ReachedLab" || s === "TestScheduled" || s === "TestDone";
+
+  const openUpdateDialog = (sample: (typeof initialLabSamples)[0]) => {
+    if (TERMINAL_LAB_STATUSES.includes(sample.currentStatus)) {
+      toast.info(
         sample.currentStatus === "NFT"
           ? "NFT (Not Fit for Test) — no further actions required"
-          : "Invoice Raised";
-      toast.info(`Sample has already reached final status: ${label}`);
+          : "Invoice Raised — no further actions required",
+      );
       return;
     }
     setUpdateSample(sample);
     setUpdateDate(new Date().toISOString().split("T")[0]);
     setUpdateRemarks("");
     setReachedLabChoice(null);
+    setScheduledChoice(null);
+    setPassFailChoice(null);
+    setDocFields([
+      {
+        label: "Star Label Image",
+        accept: ".jpg,.jpeg,.png",
+        maxMB: 10,
+        file: null,
+        hint: "JPG/PNG, max 10 MB",
+      },
+      {
+        label: "Appliance Photos (Front, Back, Side)",
+        accept: ".jpg,.jpeg,.png",
+        maxMB: 5,
+        multiple: true,
+        maxFiles: 5,
+        files: [],
+        hint: "JPG/PNG, up to 5 photos",
+      },
+      {
+        label: "Name Plate Photo",
+        accept: ".jpg,.jpeg,.png",
+        maxMB: 5,
+        file: null,
+        hint: "JPG/PNG, max 5 MB",
+      },
+      {
+        label: "Test Report",
+        accept: ".pdf",
+        maxMB: 10,
+        file: null,
+        hint: "PDF only, max 10 MB",
+      },
+    ]);
   };
+
+  const nextStatusForDialog = updateSample ? getBranchNextStatus() : null;
 
   const handleUpdateSubmit = () => {
     if (!updateSample) return;
-    let nextStatus: LabTrackingStatus | null;
-    if (updateSample.currentStatus === "ReachedLab") {
-      if (!reachedLabChoice) {
-        toast.error("Please select the next action: Test Scheduled or NFT");
-        return;
-      }
-      nextStatus = reachedLabChoice;
-    } else {
-      nextStatus = getNextStatus(updateSample.currentStatus);
+    const nextStatus = getBranchNextStatus();
+    if (!nextStatus) {
+      if (updateSample.currentStatus === "ReachedLab")
+        toast.error("Please select: Test Scheduled or NFT");
+      else if (updateSample.currentStatus === "TestScheduled")
+        toast.error("Please select: Under Testing or NFT");
+      else if (updateSample.currentStatus === "TestDone")
+        toast.error("Please select: Pass or Fail");
+      return;
     }
-    if (!nextStatus) return;
     if (!updateDate) {
       toast.error("Please select a date");
       return;
     }
+
     const newEntry: StatusLogEntry = {
       status: nextStatus,
       date: updateDate,
       remarks: updateRemarks || undefined,
     };
-    setSamples((prev) =>
-      prev.map((s) =>
-        s.id === updateSample.id
-          ? {
-              ...s,
-              currentStatus: nextStatus!,
-              statusLog: [...s.statusLog, newEntry],
+
+    const updatedSamples = samples.map((s) =>
+      s.id === updateSample.id
+        ? {
+            ...s,
+            currentStatus: nextStatus,
+            statusLog: [...s.statusLog, newEntry],
+          }
+        : s,
+    );
+    setSamples(updatedSamples);
+
+    // If Pass, Fail, or NFT → add to Test Report
+    if (
+      nextStatus === "Pass" ||
+      nextStatus === "Fail" ||
+      nextStatus === "NFT"
+    ) {
+      const docs: { name: string; type: string }[] = [];
+      if (nextStatus === "Pass" || nextStatus === "Fail") {
+        for (const f of docFields) {
+          if (f.multiple && f.files && f.files.length > 0) {
+            for (let idx = 0; idx < f.files.length; idx++) {
+              docs.push({
+                name: f.files[idx].name,
+                type: `${f.label} ${idx + 1}`,
+              });
             }
-          : s,
-      ),
-    );
-    toast.success(
-      `Status updated to "${LAB_STATUS_LABELS[nextStatus]}" for ${updateSample.brandName} ${updateSample.modelNumber}`,
-    );
+          } else if (!f.multiple && f.file) {
+            docs.push({ name: f.file.name, type: f.label });
+          } else {
+            docs.push({
+              name: `${f.label.replace(/ /g, "_")}_placeholder.${f.accept.includes("pdf") ? "pdf" : "jpg"}`,
+              type: f.label,
+            });
+          }
+        }
+      } else {
+        docs.push({ name: "NFT_Evidence.pdf", type: "NFT Evidence" });
+      }
+      const entry: TestReportEntry = {
+        sampleId: updateSample.id,
+        categoryName: updateSample.categoryName,
+        brandName: updateSample.brandName,
+        modelNumber: updateSample.modelNumber,
+        starRating: updateSample.starRating,
+        state: updateSample.state,
+        labName: updateSample.labName,
+        finalStatus: nextStatus as "Pass" | "Fail" | "NFT",
+        date: updateDate,
+        remarks: updateRemarks || undefined,
+        documents: docs,
+        beeVerificationStatus: "Pending",
+      };
+      setTestReports((prev) => [...prev, entry]);
+      toast.success(
+        `Sample marked as "${LAB_STATUS_LABELS[nextStatus]}" and forwarded to BEE Official for verification`,
+      );
+    } else {
+      toast.success(
+        `Status updated to "${LAB_STATUS_LABELS[nextStatus]}" for ${updateSample.brandName} ${updateSample.modelNumber}`,
+      );
+    }
     setUpdateSample(null);
   };
 
-  const nextStatusForDialog = updateSample
-    ? updateSample.currentStatus === "ReachedLab"
-      ? reachedLabChoice
-      : getNextStatus(updateSample.currentStatus)
-    : null;
-
-  const lastUpdatedDate = (sample: LabSample) =>
+  const lastUpdatedDate = (sample: (typeof initialLabSamples)[0]) =>
     sample.statusLog.length > 0
       ? sample.statusLog[sample.statusLog.length - 1].date
       : "—";
+
+  const finalStatusBadge = (status: "Pass" | "Fail" | "NFT") => {
+    if (status === "Pass")
+      return "bg-green-100 text-green-800 border-green-300";
+    if (status === "Fail") return "bg-red-100 text-red-800 border-red-300";
+    return "bg-orange-100 text-orange-800 border-orange-300";
+  };
+
+  const beeBadge = (s: "Pending" | "Verified" | "SendBack") => {
+    if (s === "Verified") return "bg-green-100 text-green-800";
+    if (s === "SendBack") return "bg-red-100 text-red-800";
+    return "bg-yellow-100 text-yellow-800";
+  };
+
+  // Whether to show the Pass/Fail doc upload section
+  const showPassFailDocs =
+    updateSample?.currentStatus === "TestDone" && passFailChoice !== null;
 
   return (
     <div>
@@ -174,6 +350,14 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
             className="data-[state=active]:bg-[#1a3a6b] data-[state=active]:text-white"
           >
             Sample Tracking
+          </TabsTrigger>
+          <TabsTrigger
+            value="testreport"
+            data-ocid="lab.testreport.tab"
+            className="data-[state=active]:bg-[#1a3a6b] data-[state=active]:text-white"
+          >
+            <FileText size={14} className="mr-1.5" />
+            Test Report
           </TabsTrigger>
           <TabsTrigger
             value="revert"
@@ -212,10 +396,12 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
               </TableHeader>
               <TableBody>
                 {samples.map((s, i) => {
-                  const isTerminal = TERMINAL_STATUSES.includes(
+                  const isTerminal = TERMINAL_LAB_STATUSES.includes(
                     s.currentStatus,
                   );
                   const isNFT = s.currentStatus === "NFT";
+                  const isPassFail =
+                    s.currentStatus === "Pass" || s.currentStatus === "Fail";
                   return (
                     <TableRow
                       key={s.id}
@@ -239,9 +425,7 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                       </TableCell>
                       <TableCell>
                         <span
-                          className={`text-xs px-2 py-0.5 rounded-full border font-medium ${
-                            STATUS_COLORS[s.currentStatus]
-                          }`}
+                          className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColorClass(s.currentStatus)}`}
                         >
                           {LAB_STATUS_LABELS[s.currentStatus]}
                         </span>
@@ -258,9 +442,11 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                             className={`h-6 text-xs px-2 ${
                               isNFT
                                 ? "border-red-300 text-red-700 bg-red-50 cursor-not-allowed opacity-70"
-                                : isTerminal
-                                  ? "border-green-300 text-green-700"
-                                  : "border-blue-300 text-blue-700 hover:bg-blue-50"
+                                : isPassFail
+                                  ? "border-indigo-300 text-indigo-700 bg-indigo-50"
+                                  : isTerminal
+                                    ? "border-green-300 text-green-700"
+                                    : "border-blue-300 text-blue-700 hover:bg-blue-50"
                             }`}
                             onClick={() => openUpdateDialog(s)}
                             disabled={isTerminal}
@@ -290,14 +476,142 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
           </div>
         </TabsContent>
 
+        {/* ── Test Report Tab ── */}
+        <TabsContent value="testreport">
+          <div className="mb-3 flex items-center gap-2 p-3 rounded-lg bg-indigo-50 border border-indigo-200">
+            <FileText size={16} className="text-indigo-600 flex-shrink-0" />
+            <p className="text-sm text-indigo-700">
+              All Pass, Fail, and NFT samples are listed here. These are
+              automatically forwarded to BEE Official for verification.
+            </p>
+          </div>
+
+          {/* Summary badges */}
+          <div className="flex gap-3 mb-4">
+            {(["Pass", "Fail", "NFT"] as const).map((s) => {
+              const count = testReports.filter(
+                (r) => r.finalStatus === s,
+              ).length;
+              return (
+                <div
+                  key={s}
+                  className={`px-4 py-2 rounded-lg border text-sm font-semibold ${finalStatusBadge(s)}`}
+                >
+                  {s}: {count}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow style={{ backgroundColor: "#1a3a6b" }}>
+                  {[
+                    "#",
+                    "Category",
+                    "Brand",
+                    "Model",
+                    "Star",
+                    "Final Status",
+                    "Date",
+                    "Remarks",
+                    "Documents",
+                    "BEE Verification",
+                  ].map((h) => (
+                    <TableHead
+                      key={h}
+                      className="text-white text-xs font-semibold"
+                    >
+                      {h}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {testReports.length === 0 && (
+                  <TableRow data-ocid="lab.testreport.empty_state">
+                    <TableCell
+                      colSpan={10}
+                      className="text-center py-8 text-gray-400 text-sm"
+                    >
+                      No test reports yet. Update samples to Pass, Fail, or NFT
+                      to see them here.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {testReports.map((r, i) => (
+                  <TableRow
+                    key={`${r.sampleId}-${i}`}
+                    data-ocid={`lab.testreport.item.${i + 1}`}
+                    className="hover:bg-blue-50"
+                  >
+                    <TableCell className="text-xs text-gray-500">
+                      {i + 1}
+                    </TableCell>
+                    <TableCell className="text-xs">{r.categoryName}</TableCell>
+                    <TableCell className="text-xs font-medium">
+                      {r.brandName}
+                    </TableCell>
+                    <TableCell className="text-xs font-mono">
+                      {r.modelNumber}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {"★".repeat(r.starRating)}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${finalStatusBadge(r.finalStatus)}`}
+                      >
+                        {r.finalStatus === "Pass" && <span>✓ Pass</span>}
+                        {r.finalStatus === "Fail" && <span>✗ Fail</span>}
+                        {r.finalStatus === "NFT" && <span>⚠ NFT</span>}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-600">
+                      {r.date}
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-600 max-w-[140px] truncate">
+                      {r.remarks || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        data-ocid={`lab.testreport.docs.button.${i + 1}`}
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-xs px-2 border-blue-300 text-blue-700 hover:bg-blue-50"
+                        onClick={() => setDocsEntry(r)}
+                      >
+                        <Paperclip size={11} className="mr-1" />
+                        {r.documents.length} file
+                        {r.documents.length !== 1 ? "s" : ""}
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${beeBadge(r.beeVerificationStatus)}`}
+                      >
+                        {r.beeVerificationStatus === "Verified"
+                          ? "✓ Verified"
+                          : r.beeVerificationStatus === "SendBack"
+                            ? "Sent Back"
+                            : "Pending"}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
         {/* ── Revert from BEE Tab ── */}
         <TabsContent value="revert">
           <div className="mb-3 flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
             <RotateCcw size={16} className="text-red-600 flex-shrink-0" />
             <p className="text-sm text-red-700">
               Samples listed below have been returned from BEE due to
-              documentation or compliance issues. Please review the reason and
-              take corrective action.
+              documentation or compliance issues.
             </p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -369,12 +683,11 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
         open={!!updateSample}
         onOpenChange={() => {
           setUpdateSample(null);
-          setReachedLabChoice(null);
         }}
       >
         <DialogContent
           data-ocid="lab.update_status.dialog"
-          className="max-w-md"
+          className="max-w-lg max-h-[90vh] overflow-y-auto"
         >
           <DialogHeader>
             <DialogTitle style={{ color: "#1a3a6b" }}>
@@ -383,6 +696,7 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
           </DialogHeader>
           {updateSample && (
             <div className="space-y-4">
+              {/* Sample info */}
               <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
                 <p className="text-xs text-gray-500">Sample</p>
                 <p className="font-semibold text-sm">
@@ -393,89 +707,160 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                 </p>
               </div>
 
-              {updateSample.currentStatus === "ReachedLab" ? (
+              {/* Branch: ReachedLab → TestScheduled or NFT */}
+              {updateSample.currentStatus === "ReachedLab" && (
                 <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-medium text-gray-700 mb-2">
-                      Select Next Action *
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setReachedLabChoice("TestScheduled")}
-                        className={`p-3 rounded-lg border-2 text-left transition-all ${
-                          reachedLabChoice === "TestScheduled"
-                            ? "border-purple-500 bg-purple-50"
-                            : "border-gray-200 bg-white hover:border-purple-300"
-                        }`}
-                      >
-                        <p className="text-xs font-semibold text-purple-700">
-                          📋 Test Scheduled
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Sample is fit for testing
-                        </p>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReachedLabChoice("NFT")}
-                        className={`p-3 rounded-lg border-2 text-left transition-all ${
-                          reachedLabChoice === "NFT"
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-200 bg-white hover:border-red-300"
-                        }`}
-                      >
-                        <p className="text-xs font-semibold text-red-700">
-                          🚫 NFT
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Not Fit for Test
-                        </p>
-                      </button>
-                    </div>
+                  <p className="text-xs font-medium text-gray-700">
+                    Select Next Action *
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setReachedLabChoice("TestScheduled")}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        reachedLabChoice === "TestScheduled"
+                          ? "border-purple-500 bg-purple-50"
+                          : "border-gray-200 bg-white hover:border-purple-300"
+                      }`}
+                    >
+                      <p className="text-xs font-semibold text-purple-700">
+                        📋 Test Scheduled
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Sample is fit for testing
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReachedLabChoice("NFT")}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        reachedLabChoice === "NFT"
+                          ? "border-red-500 bg-red-50"
+                          : "border-gray-200 bg-white hover:border-red-300"
+                      }`}
+                    >
+                      <p className="text-xs font-semibold text-red-700">
+                        🚫 NFT
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Not Fit for Test
+                      </p>
+                    </button>
                   </div>
-
-                  {/* NFT info banner */}
                   {reachedLabChoice === "NFT" && (
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
                       <span className="text-red-500 text-base leading-none mt-0.5">
                         ⚠️
                       </span>
                       <p className="text-xs text-red-700">
-                        <strong>Note:</strong> NFT is a terminal status. No
-                        further actions will be available after marking this
-                        sample as Not Fit for Test.
+                        <strong>Note:</strong> NFT is terminal. No further
+                        actions will be possible. Case will be forwarded to BEE
+                        Official.
                       </p>
                     </div>
                   )}
+                </div>
+              )}
 
-                  {reachedLabChoice && (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-500 mb-1">
-                          Current Status
-                        </p>
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full border font-medium ${STATUS_COLORS[updateSample.currentStatus]}`}
-                        >
-                          {LAB_STATUS_LABELS[updateSample.currentStatus]}
-                        </span>
-                      </div>
-                      <div className="text-gray-400 text-lg">→</div>
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-500 mb-1">
-                          Next Status
-                        </p>
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full border font-medium ${STATUS_COLORS[reachedLabChoice]}`}
-                        >
-                          {LAB_STATUS_LABELS[reachedLabChoice]}
-                        </span>
-                      </div>
+              {/* Branch: TestScheduled → UnderTesting or NFT */}
+              {updateSample.currentStatus === "TestScheduled" && (
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-gray-700">
+                    Select Next Action *
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setScheduledChoice("UnderTesting")}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        scheduledChoice === "UnderTesting"
+                          ? "border-yellow-500 bg-yellow-50"
+                          : "border-gray-200 bg-white hover:border-yellow-300"
+                      }`}
+                    >
+                      <p className="text-xs font-semibold text-yellow-700">
+                        🔬 Under Testing
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Proceed with testing
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScheduledChoice("NFT")}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        scheduledChoice === "NFT"
+                          ? "border-red-500 bg-red-50"
+                          : "border-gray-200 bg-white hover:border-red-300"
+                      }`}
+                    >
+                      <p className="text-xs font-semibold text-red-700">
+                        🚫 NFT
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Not Fit for Test
+                      </p>
+                    </button>
+                  </div>
+                  {scheduledChoice === "NFT" && (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+                      <span className="text-red-500 text-base leading-none mt-0.5">
+                        ⚠️
+                      </span>
+                      <p className="text-xs text-red-700">
+                        <strong>Note:</strong> NFT is terminal. Case will be
+                        forwarded to BEE Official for verification.
+                      </p>
                     </div>
                   )}
                 </div>
-              ) : (
+              )}
+
+              {/* Branch: TestDone → Pass or Fail */}
+              {updateSample.currentStatus === "TestDone" && (
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-gray-700">
+                    Select Test Result *
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPassFailChoice("Pass")}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        passFailChoice === "Pass"
+                          ? "border-green-500 bg-green-50"
+                          : "border-gray-200 bg-white hover:border-green-300"
+                      }`}
+                    >
+                      <p className="text-xs font-semibold text-green-700">
+                        ✅ Pass
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Sample meets BEE standards
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPassFailChoice("Fail")}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        passFailChoice === "Fail"
+                          ? "border-red-500 bg-red-50"
+                          : "border-gray-200 bg-white hover:border-red-300"
+                      }`}
+                    >
+                      <p className="text-xs font-semibold text-red-700">
+                        ❌ Fail
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Sample fails BEE standards
+                      </p>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Status transition display (non-branch statuses) */}
+              {!isBranchStatus(updateSample.currentStatus) &&
                 nextStatusForDialog && (
                   <div className="flex items-center gap-2">
                     <div className="flex-1">
@@ -483,9 +868,7 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                         Current Status
                       </p>
                       <span
-                        className={`text-xs px-2 py-1 rounded-full border font-medium ${
-                          STATUS_COLORS[updateSample.currentStatus]
-                        }`}
+                        className={`text-xs px-2 py-1 rounded-full border font-medium ${statusColorClass(updateSample.currentStatus)}`}
                       >
                         {LAB_STATUS_LABELS[updateSample.currentStatus]}
                       </span>
@@ -494,18 +877,18 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                     <div className="flex-1">
                       <p className="text-xs text-gray-500 mb-1">Next Status</p>
                       <span
-                        className={`text-xs px-2 py-1 rounded-full border font-medium ${
-                          STATUS_COLORS[nextStatusForDialog]
-                        }`}
+                        className={`text-xs px-2 py-1 rounded-full border font-medium ${statusColorClass(nextStatusForDialog)}`}
                       >
                         {LAB_STATUS_LABELS[nextStatusForDialog]}
                       </span>
                     </div>
                   </div>
-                )
-              )}
+                )}
 
-              {nextStatusForDialog && (
+              {/* Date and Remarks (show when next status is determined) */}
+              {(nextStatusForDialog ||
+                (updateSample.currentStatus === "TestDone" &&
+                  passFailChoice)) && (
                 <>
                   <div>
                     <Label
@@ -540,48 +923,155 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                       rows={3}
                     />
                   </div>
-                  {HAS_ATTACHMENT[nextStatusForDialog] && (
-                    <button
-                      type="button"
-                      className={`w-full border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
-                        nextStatusForDialog === "NFT"
-                          ? "border-red-300 hover:bg-red-50"
-                          : "border-blue-200 hover:bg-blue-50"
-                      }`}
-                      data-ocid="lab.update_status.dropzone"
-                      onClick={() =>
-                        toast.info(
-                          `File upload for "${LAB_STATUS_LABELS[nextStatusForDialog]}" — attach your document here`,
-                        )
-                      }
-                    >
-                      <Upload
-                        size={20}
-                        className={`mx-auto mb-2 ${
-                          nextStatusForDialog === "NFT"
-                            ? "text-red-400"
-                            : "text-blue-400"
-                        }`}
-                      />
-                      <p
-                        className={`text-xs font-medium ${
-                          nextStatusForDialog === "NFT"
-                            ? "text-red-600"
-                            : "text-blue-600"
-                        }`}
-                      >
-                        {nextStatusForDialog === "NFT"
-                          ? "Attach NFT Evidence / Supporting Document (PDF/JPG/PNG)"
-                          : nextStatusForDialog === "ReportUploaded"
-                            ? "Attach Test Report (PDF/DOCX)"
-                            : "Attach Invoice Document (PDF)"}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Click to browse or drag & drop
-                      </p>
-                    </button>
-                  )}
                 </>
+              )}
+
+              {/* Document uploads for Pass/Fail */}
+              {showPassFailDocs && (
+                <div className="space-y-3 border-t pt-3">
+                  <p className="text-xs font-semibold text-gray-700">
+                    Attach Documents
+                  </p>
+                  {docFields.map((field, fi) => (
+                    <div key={field.label} className="border rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <Label className="text-xs font-medium text-gray-700">
+                          {field.label}
+                        </Label>
+                        <span className="text-xs text-gray-400">
+                          {field.hint}
+                        </span>
+                      </div>
+                      <div
+                        className="border-2 border-dashed border-gray-200 rounded p-3 text-center cursor-pointer hover:bg-gray-50 relative"
+                        data-ocid={`lab.doc_upload.dropzone.${fi + 1}`}
+                      >
+                        <input
+                          type="file"
+                          accept={field.accept}
+                          multiple={field.multiple}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          onChange={(e) => {
+                            const files = e.target.files;
+                            if (!files) return;
+                            if (field.multiple) {
+                              const arr = Array.from(files).slice(
+                                0,
+                                field.maxFiles,
+                              );
+                              setDocFields((prev) =>
+                                prev.map((f, i) =>
+                                  i === fi ? { ...f, files: arr } : f,
+                                ),
+                              );
+                            } else {
+                              const file = files[0];
+                              if (file) {
+                                if (file.size > field.maxMB * 1024 * 1024) {
+                                  toast.error(
+                                    `File too large. Max ${field.maxMB}MB allowed.`,
+                                  );
+                                  return;
+                                }
+                                const ext = file.name
+                                  .split(".")
+                                  .pop()
+                                  ?.toLowerCase();
+                                if (field.accept === ".pdf" && ext !== "pdf") {
+                                  toast.error(
+                                    "Only PDF files are allowed for Test Report.",
+                                  );
+                                  return;
+                                }
+                                setDocFields((prev) =>
+                                  prev.map((f, i) =>
+                                    i === fi ? { ...f, file } : f,
+                                  ),
+                                );
+                              }
+                            }
+                          }}
+                        />
+                        <Upload
+                          size={16}
+                          className="text-gray-400 mx-auto mb-1"
+                        />
+                        {field.multiple ? (
+                          field.files && field.files.length > 0 ? (
+                            <p className="text-xs text-green-600">
+                              {field.files.length} file(s) selected
+                            </p>
+                          ) : (
+                            <p className="text-xs text-gray-400">
+                              Click to attach up to {field.maxFiles} photos
+                            </p>
+                          )
+                        ) : field.file ? (
+                          <p className="text-xs text-green-600">
+                            {field.file.name}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-gray-400">
+                            Click to browse
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* NFT attachment */}
+              {(nextStatusForDialog === "NFT" ||
+                (updateSample.currentStatus === "ReachedLab" &&
+                  reachedLabChoice === "NFT") ||
+                (updateSample.currentStatus === "TestScheduled" &&
+                  scheduledChoice === "NFT")) && (
+                <div>
+                  <Label className="text-xs font-medium text-gray-700">
+                    Attach NFT Evidence *
+                  </Label>
+                  <button
+                    type="button"
+                    className="w-full mt-1 border-2 border-dashed border-red-200 rounded-lg p-4 text-center cursor-pointer hover:bg-red-50"
+                    data-ocid="lab.update_status.dropzone"
+                    onClick={() =>
+                      toast.info(
+                        "File upload for NFT evidence — attach your document here",
+                      )
+                    }
+                  >
+                    <Upload size={20} className="mx-auto mb-2 text-red-400" />
+                    <p className="text-xs font-medium text-red-600">
+                      Attach NFT Evidence / Supporting Document
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      PDF/JPG/PNG — Click to browse
+                    </p>
+                  </button>
+                </div>
+              )}
+
+              {/* Invoice/normal attachment */}
+              {nextStatusForDialog === "InvoiceRaised" && (
+                <button
+                  type="button"
+                  className="w-full border-2 border-dashed border-blue-200 rounded-lg p-4 text-center cursor-pointer hover:bg-blue-50"
+                  data-ocid="lab.update_status.dropzone"
+                  onClick={() =>
+                    toast.info(
+                      "File upload for Invoice — attach your document here",
+                    )
+                  }
+                >
+                  <Upload size={20} className="mx-auto mb-2 text-blue-400" />
+                  <p className="text-xs font-medium text-blue-600">
+                    Attach Invoice Document (PDF)
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Click to browse or drag & drop
+                  </p>
+                </button>
               )}
             </div>
           )}
@@ -637,7 +1127,6 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                       path.indexOf(status);
                     const isFuture = !logEntry && !isCurrent;
                     const isLast = idx === path.length - 1;
-
                     return (
                       <div key={status} className="flex gap-3">
                         <div className="flex flex-col items-center">
@@ -646,9 +1135,13 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                               isCompleted
                                 ? "bg-green-500 border-green-500 text-white"
                                 : isCurrent
-                                  ? status === "NFT"
-                                    ? "bg-red-600 border-red-600 text-white"
-                                    : "bg-blue-600 border-blue-600 text-white"
+                                  ? (
+                                      status === "NFT" || status === "Fail"
+                                        ? "bg-red-600 border-red-600 text-white"
+                                        : status === "Pass"
+                                          ? "bg-green-600 border-green-600 text-white"
+                                          : "bg-blue-600 border-blue-600 text-white"
+                                    )
                                   : "bg-gray-100 border-gray-300 text-gray-400"
                             }`}
                           >
@@ -662,9 +1155,7 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                           </div>
                           {!isLast && (
                             <div
-                              className={`w-0.5 flex-1 min-h-[24px] ${
-                                isCompleted ? "bg-green-300" : "bg-gray-200"
-                              }`}
+                              className={`w-0.5 flex-1 min-h-[24px] ${isCompleted ? "bg-green-300" : "bg-gray-200"}`}
                             />
                           )}
                         </div>
@@ -675,23 +1166,34 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                                 isCompleted
                                   ? "text-green-700"
                                   : isCurrent
-                                    ? status === "NFT"
-                                      ? "text-red-700"
-                                      : "text-blue-700"
+                                    ? (
+                                        status === "NFT" || status === "Fail"
+                                          ? "text-red-700"
+                                          : status === "Pass"
+                                            ? "text-green-700"
+                                            : "text-blue-700"
+                                      )
                                     : isFuture
                                       ? "text-gray-400"
                                       : "text-gray-700"
                               }`}
                             >
                               {LAB_STATUS_LABELS[status]}
-                              {isCurrent && status === "NFT" && (
-                                <span className="ml-2 text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
-                                  Terminal
-                                </span>
-                              )}
-                              {isCurrent && status !== "NFT" && (
-                                <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
-                                  Current
+                              {isCurrent && (
+                                <span
+                                  className={`ml-2 text-xs px-1.5 py-0.5 rounded ${
+                                    status === "NFT"
+                                      ? "bg-red-100 text-red-700"
+                                      : status === "Pass"
+                                        ? "bg-green-100 text-green-700"
+                                        : status === "Fail"
+                                          ? "bg-red-100 text-red-700"
+                                          : "bg-blue-100 text-blue-700"
+                                  }`}
+                                >
+                                  {TERMINAL_LAB_STATUSES.includes(status)
+                                    ? "Terminal"
+                                    : "Current"}
                                 </span>
                               )}
                             </p>
@@ -733,6 +1235,104 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
               variant="outline"
               onClick={() => setLogSample(null)}
               className="text-sm"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Documents View Dialog ── */}
+      <Dialog open={!!docsEntry} onOpenChange={() => setDocsEntry(null)}>
+        <DialogContent data-ocid="lab.docs.dialog" className="max-w-md">
+          <DialogHeader>
+            <DialogTitle style={{ color: "#1a3a6b" }}>
+              Attached Documents
+            </DialogTitle>
+          </DialogHeader>
+          {docsEntry && (
+            <div>
+              <div className="p-3 bg-gray-50 rounded-lg border mb-4">
+                <p className="font-semibold text-sm">
+                  {docsEntry.brandName} — {docsEntry.modelNumber}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {docsEntry.categoryName}
+                </p>
+              </div>
+              <div className="space-y-2">
+                {docsEntry.documents.map((doc) => (
+                  <div
+                    key={doc.name}
+                    className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText size={16} className="text-blue-500" />
+                      <div>
+                        <p className="text-xs font-medium text-gray-800">
+                          {doc.name}
+                        </p>
+                        <p className="text-xs text-gray-400">{doc.type}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => toast.info(`Downloading: ${doc.name}`)}
+                      data-ocid="lab.docs.download.button"
+                    >
+                      <Download size={14} className="text-gray-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDocsEntry(null)}
+              className="text-sm"
+              data-ocid="lab.docs.close_button"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── BEE Verification Dialog (read-only preview) ── */}
+      <Dialog open={!!verifyEntry} onOpenChange={() => setVerifyEntry(null)}>
+        <DialogContent data-ocid="lab.verify.dialog" className="max-w-md">
+          <DialogHeader>
+            <DialogTitle style={{ color: "#1a3a6b" }}>
+              BEE Verification Status
+            </DialogTitle>
+          </DialogHeader>
+          {verifyEntry && (
+            <div className="space-y-3">
+              <div className="p-3 bg-gray-50 rounded-lg border">
+                <p className="font-semibold text-sm">
+                  {verifyEntry.brandName} — {verifyEntry.modelNumber}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {verifyEntry.categoryName}
+                </p>
+              </div>
+              <div
+                className={`p-3 rounded-lg border text-sm font-medium ${beeBadge(verifyEntry.beeVerificationStatus)}`}
+              >
+                BEE Status: {verifyEntry.beeVerificationStatus}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setVerifyEntry(null)}
+              className="text-sm"
+              data-ocid="lab.verify.close_button"
             >
               Close
             </Button>

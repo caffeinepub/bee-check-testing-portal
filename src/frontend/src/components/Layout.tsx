@@ -1,12 +1,15 @@
 import { Button } from "@/components/ui/button";
 import {
+  AlertTriangle,
   Bell,
+  CalendarCheck,
   CheckCircle,
   ChevronRight,
   ClipboardList,
   Database,
   DollarSign,
   FileCheck,
+  FileText,
   FlaskConical,
   LayoutDashboard,
   List,
@@ -18,7 +21,6 @@ import {
   ShoppingCart,
   Target,
   TestTube2,
-  Upload,
   Users,
   XCircle,
 } from "lucide-react";
@@ -78,6 +80,11 @@ const navItems: Record<
       label: "Rejected Reports",
       page: "rejected",
     },
+    {
+      icon: <FlaskConical size={18} />,
+      label: "Lab Results",
+      page: "labresults",
+    },
   ],
   purchaser: [
     {
@@ -100,6 +107,11 @@ const navItems: Record<
       label: "Blocked Sample",
       page: "blocked",
     },
+    {
+      icon: <TestTube2 size={18} />,
+      label: "2nd Check Test",
+      page: "secondcheck",
+    },
   ],
   lab: [
     {
@@ -113,7 +125,16 @@ const navItems: Record<
       label: "Revert from BEE",
       page: "revert",
     },
-    { icon: <Upload size={18} />, label: "Upload Report", page: "upload" },
+    {
+      icon: <FileText size={18} />,
+      label: "Test Report",
+      page: "testreport",
+    },
+    {
+      icon: <TestTube2 size={18} />,
+      label: "2nd Check Test",
+      page: "secondcheck",
+    },
   ],
   labcoordinator: [
     {
@@ -127,25 +148,44 @@ const navItems: Record<
       page: "assignlab",
     },
   ],
+  complianceofficer: [
+    {
+      icon: <LayoutDashboard size={18} />,
+      label: "Dashboard",
+      page: "dashboard",
+    },
+    {
+      icon: <AlertTriangle size={18} />,
+      label: "Failed Cases",
+      page: "dashboard",
+    },
+    {
+      icon: <CalendarCheck size={18} />,
+      label: "Scheduling Approvals",
+      page: "scheduling",
+    },
+  ],
 };
 
-const roleLabels: Record<string, string> = {
+const ROLE_LABELS: Record<string, string> = {
   director: "BEE Director",
   official: "BEE Official",
   purchaser: "SDA Purchaser",
   lab: "Test Laboratory",
   labcoordinator: "Lab Coordinator",
+  complianceofficer: "Compliance Officer",
 };
 
-const roleAccentColors: Record<string, string> = {
-  director: "#f5a623",
+const ROLE_ACCENT: Record<string, string> = {
+  director: "#c8a951",
   official: "#10b981",
   purchaser: "#f59e0b",
   lab: "#8b5cf6",
   labcoordinator: "#06b6d4",
+  complianceofficer: "#ef4444",
 };
 
-const NEW_LOGO =
+const BEE_LOGO =
   "/assets/uploads/bee_logo-019d1e60-576f-76be-ad3c-c0e444c648f1-1.png";
 
 export default function Layout({
@@ -155,14 +195,11 @@ export default function Layout({
 }: LayoutProps) {
   const { user, logout } = useAuth();
   const { blockedSamples } = useBlockedSamples();
-  if (!user) return null;
 
+  if (!user) return null;
   const items = navItems[user.role] || [];
-  const today = new Date().toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  const accent = ROLE_ACCENT[user.role] || "#c8a951";
+  const roleLabel = ROLE_LABELS[user.role] || user.role;
 
   const pendingCount =
     user.role === "labcoordinator"
@@ -170,210 +207,159 @@ export default function Layout({
       : 0;
 
   return (
-    <div
-      className="flex h-screen overflow-hidden"
-      style={{ backgroundColor: "#f0f4f8" }}
-    >
-      {/* ── Sidebar ── */}
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
       <aside
-        className="w-72 flex-shrink-0 flex flex-col relative"
+        className="w-60 flex-shrink-0 flex flex-col"
         style={{
           background:
-            "linear-gradient(180deg, #1a3a6b 0%, #0f2d57 70%, #091e3a 100%)",
-          boxShadow: "4px 0 20px rgba(26, 58, 107, 0.25)",
+            "linear-gradient(180deg, #0d2252 0%, #1a3a6b 60%, #1e4080 100%)",
         }}
       >
-        {/* Logo / Brand area */}
+        {/* Logo + Brand */}
         <div
-          className="px-5 pt-6 pb-5"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+          className="flex items-center gap-3 px-4 py-4 border-b"
+          style={{ borderColor: "rgba(200,169,81,0.3)" }}
         >
-          <div className="flex items-center gap-3">
-            <img
-              src={NEW_LOGO}
-              alt="BEE Logo"
-              className="w-12 h-12 rounded-full object-contain bg-white flex-shrink-0"
-            />
-            <div className="min-w-0">
-              <p className="text-white font-bold text-sm leading-tight">
-                BEE Portal
-              </p>
-              <p className="text-blue-300 text-xs leading-tight">
-                Check Testing Programme
-              </p>
-            </div>
+          <img
+            src={BEE_LOGO}
+            alt="BEE Logo"
+            className="h-10 w-10 object-contain rounded bg-white p-0.5"
+          />
+          <div>
+            <p className="text-white font-bold text-sm leading-tight">
+              BEE Check
+            </p>
+            <p className="text-xs leading-tight" style={{ color: accent }}>
+              Testing Portal
+            </p>
           </div>
+        </div>
+
+        {/* Role Badge */}
+        <div
+          className="mx-3 mt-3 mb-1 px-3 py-1.5 rounded-lg text-center"
+          style={{
+            backgroundColor: "rgba(200,169,81,0.15)",
+            border: "1px solid rgba(200,169,81,0.25)",
+          }}
+        >
+          <p className="text-xs font-semibold" style={{ color: accent }}>
+            {roleLabel}
+          </p>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          <p
-            className="text-xs font-semibold uppercase tracking-widest px-3 mb-3"
-            style={{ color: roleAccentColors[user.role] ?? "#f5a623" }}
-          >
-            {roleLabels[user.role]}
-          </p>
-          {items.map((item) => (
-            <button
-              type="button"
-              key={item.page}
-              data-ocid={`nav.${item.page}_link`}
-              onClick={() => onNavigate(item.page)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm transition-all duration-150 sidebar-nav-item ${
-                activePage === item.page
-                  ? "sidebar-nav-active text-white font-semibold"
-                  : "text-blue-200 hover:bg-white/8 hover:text-white"
-              }`}
-              style={
-                activePage === item.page
-                  ? { background: "rgba(255,255,255,0.1)" }
-                  : {}
-              }
-            >
-              <span
-                className={
-                  activePage === item.page ? "opacity-100" : "opacity-70"
+          {items.map((item) => {
+            const isActive = activePage === item.page;
+            return (
+              <button
+                key={item.page + item.label}
+                type="button"
+                data-ocid={`nav.${item.page}_link`}
+                onClick={() => onNavigate(item.page)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm transition-all duration-150 sidebar-nav-item ${
+                  isActive
+                    ? "sidebar-nav-active text-white font-semibold"
+                    : "text-blue-200 hover:bg-white/10 hover:text-white"
+                }`}
+                style={
+                  isActive ? { backgroundColor: accent, color: "#1a3a6b" } : {}
                 }
               >
-                {item.icon}
-              </span>
-              <span className="flex-1 text-left">{item.label}</span>
-              {item.page === "assignlab" && pendingCount > 0 && (
-                <span
-                  className="text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
-                  style={{ backgroundColor: "#d97706", color: "white" }}
-                >
-                  {pendingCount}
+                <span className={isActive ? "text-[#1a3a6b]" : ""}>
+                  {item.icon}
                 </span>
-              )}
-              {activePage === item.page && (
-                <ChevronRight size={14} className="opacity-60" />
-              )}
-            </button>
-          ))}
+                <span className="flex-1 text-left">{item.label}</span>
+                {item.page === "assignlab" && pendingCount > 0 && (
+                  <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                    {pendingCount}
+                  </span>
+                )}
+                {isActive && (
+                  <ChevronRight size={14} className="text-[#1a3a6b]" />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
-        {/* User info */}
-        <div
-          className="px-4 py-4"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
-        >
-          <div className="flex items-center gap-3 mb-3">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-md"
-              style={{
-                background: `linear-gradient(135deg, ${roleAccentColors[user.role] ?? "#f5a623"}, #d4820a)`,
-                color: "#1a3a6b",
-              }}
-            >
-              {user.name[0]}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-white text-xs font-semibold truncate">
-                {user.name}
-              </p>
-              <p className="text-blue-400 text-xs truncate">{user.email}</p>
-            </div>
-          </div>
-          <Button
+        {/* Logout */}
+        <div className="px-3 pb-4">
+          <button
+            type="button"
             data-ocid="nav.logout_button"
             onClick={logout}
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 text-xs rounded-lg"
-            style={{
-              color: "rgba(147,197,253,0.8)",
-              background: "rgba(255,255,255,0.05)",
-            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-300 hover:bg-red-900/30 hover:text-red-200 transition-colors"
           >
-            <LogOut size={13} />
-            Sign Out
-          </Button>
+            <LogOut size={18} />
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
 
-      {/* ── Main Area ── */}
+      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header
-          className="flex-shrink-0 flex items-center justify-between px-6 bg-white"
-          style={{
-            height: "62px",
-            borderBottom: "1px solid #e2e8f0",
-            boxShadow: "0 1px 8px rgba(26,58,107,0.07)",
-            borderTop: "2px solid #1a3a6b",
-          }}
-        >
+        <header className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shadow-sm">
           <div className="flex items-center gap-3">
-            <img
-              src={NEW_LOGO}
-              alt="BEE Logo"
-              className="w-9 h-9 rounded-full object-contain bg-white border border-gray-200"
-            />
+            <img src={BEE_LOGO} alt="BEE" className="h-8 w-8 object-contain" />
             <div>
-              <h1
-                className="text-sm font-bold leading-tight"
-                style={{ color: "#1a3a6b" }}
-              >
+              <p className="text-sm font-bold" style={{ color: "#1a3a6b" }}>
                 Bureau of Energy Efficiency
-              </h1>
+              </p>
               <p className="text-xs text-gray-500">
-                Standards &amp; Labelling · Check Testing Portal
+                Standards &amp; Labelling Programme — Check Testing Portal
               </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-gray-400 hidden sm:block">
-              Last updated:{" "}
-              <span className="text-gray-600 font-medium">{today}</span>
-            </span>
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-gray-100"
-              style={{ color: "#64748b" }}
               data-ocid="nav.notifications_button"
-              onClick={() => {}}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
             >
-              <Bell size={18} />
-              {pendingCount > 0 ? (
-                <span
-                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-0.5"
-                  style={{ backgroundColor: "#d97706" }}
-                >
-                  {pendingCount}
-                </span>
-              ) : (
-                <span
-                  className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-                  style={{ backgroundColor: "#dc2626" }}
-                />
-              )}
+              <Bell size={18} className="text-gray-600" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </button>
-            <div className="flex items-center gap-2.5">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-gray-800 leading-tight">
-                  {user.name}
-                </p>
-                <p className="text-xs text-gray-500 leading-tight">
-                  {roleLabels[user.role]}
-                </p>
-              </div>
+            <div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: "#f0f4ff" }}
+            >
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm"
-                style={{
-                  background: "linear-gradient(135deg, #1a3a6b, #0f2d57)",
-                  color: "white",
-                }}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                style={{ backgroundColor: "#1a3a6b" }}
               >
-                {user.name[0]}
+                {roleLabel.charAt(0)}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-800">
+                  {roleLabel}
+                </p>
+                <p className="text-xs text-gray-400">{user.email}</p>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Content */}
+        {/* Page content */}
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
+
+        {/* Footer */}
+        <footer className="px-6 py-2 bg-white border-t border-gray-100 text-center">
+          <p className="text-xs text-gray-400">
+            © {new Date().getFullYear()}. Built with love using{" "}
+            <a
+              href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-gray-600"
+            >
+              caffeine.ai
+            </a>
+          </p>
+        </footer>
       </div>
     </div>
   );

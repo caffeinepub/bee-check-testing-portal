@@ -1,6 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, Clock, FileText, XCircle } from "lucide-react";
-import { mockReports } from "../../data/mockData";
+import {
+  CheckCircle,
+  Clock,
+  FileText,
+  FlaskConical,
+  XCircle,
+} from "lucide-react";
+import { mockReports, testReportEntries } from "../../data/mockData";
 
 interface Props {
   onNavigate: (page: string) => void;
@@ -119,6 +125,69 @@ export default function OfficialDashboard({ onNavigate }: Props) {
                 </span>
               </div>
             ))}
+        </div>
+      </div>
+
+      {/* Lab Results forwarded from Test Lab */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-gray-800 text-sm flex items-center gap-2">
+            <FlaskConical size={16} className="text-indigo-600" />
+            Lab Results Forwarded for Verification
+          </h3>
+          <button
+            type="button"
+            data-ocid="official.labresults.view_all_link"
+            onClick={() => onNavigate("labresults")}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            View All →
+          </button>
+        </div>
+        <div className="space-y-2">
+          {testReportEntries
+            .filter((r) => r.beeVerificationStatus === "Pending")
+            .map((r, idx) => (
+              <div
+                key={r.sampleId}
+                data-ocid={`official.labresults_pending.item.${idx + 1}`}
+                className="flex items-center justify-between p-3 rounded border border-indigo-100 bg-indigo-50"
+              >
+                <div>
+                  <p className="text-sm font-medium">
+                    {r.brandName} {r.modelNumber}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {r.categoryName} | {r.labName} | {r.date}
+                  </p>
+                </div>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${
+                    r.finalStatus === "Pass"
+                      ? "bg-green-100 text-green-800 border-green-300"
+                      : r.finalStatus === "Fail"
+                        ? "bg-red-100 text-red-800 border-red-300"
+                        : "bg-orange-100 text-orange-800 border-orange-300"
+                  }`}
+                >
+                  {r.finalStatus === "Pass"
+                    ? "✓ Pass"
+                    : r.finalStatus === "Fail"
+                      ? "✗ Fail"
+                      : "⚠ NFT"}
+                </span>
+              </div>
+            ))}
+          {testReportEntries.filter(
+            (r) => r.beeVerificationStatus === "Pending",
+          ).length === 0 && (
+            <p
+              className="text-sm text-gray-400 text-center py-3"
+              data-ocid="official.labresults.empty_state"
+            >
+              No pending lab results to verify.
+            </p>
+          )}
         </div>
       </div>
     </div>
