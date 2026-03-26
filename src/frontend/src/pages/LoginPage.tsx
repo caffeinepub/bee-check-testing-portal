@@ -159,20 +159,12 @@ export default function LoginPage() {
           <div className="absolute inset-0 dot-pattern opacity-40 pointer-events-none" />
 
           <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-8">
+            <div className="mb-8">
               <img
-                src="/assets/uploads/bee_logo-019d1e60-576f-76be-ad3c-c0e444c648f1-1.png"
-                alt="BEE Logo"
-                className="w-14 h-14 rounded-full object-contain bg-white flex-shrink-0"
+                src="/assets/generated/bee_logo_transparent.png"
+                alt="Bureau of Energy Efficiency — Ministry of Power, Government of India"
+                className="h-14 max-w-full object-contain bg-white rounded-xl px-3 py-1.5"
               />
-              <div>
-                <p className="text-white font-bold text-sm leading-tight tracking-wide">
-                  GOVERNMENT OF INDIA
-                </p>
-                <p className="text-blue-300 text-xs leading-tight">
-                  Ministry of Power
-                </p>
-              </div>
             </div>
 
             <div className="mb-8">
@@ -264,18 +256,12 @@ export default function LoginPage() {
 
           <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
             <div className="w-full max-w-md">
-              <div className="lg:hidden flex items-center gap-3 mb-8">
+              <div className="lg:hidden flex items-center justify-center mb-8">
                 <img
-                  src="/assets/uploads/bee_logo-019d1e60-576f-76be-ad3c-c0e444c648f1-1.png"
-                  alt="BEE Logo"
-                  className="w-10 h-10 rounded-full object-contain bg-white flex-shrink-0"
+                  src="/assets/generated/bee_logo_transparent.png"
+                  alt="Bureau of Energy Efficiency — Ministry of Power, Government of India"
+                  className="h-12 max-w-full object-contain"
                 />
-                <div>
-                  <p className="font-bold text-sm" style={{ color: "#1a3a6b" }}>
-                    Bureau of Energy Efficiency
-                  </p>
-                  <p className="text-xs text-gray-500">Check Testing Portal</p>
-                </div>
               </div>
 
               {/* ── CREDENTIALS STEP ── */}

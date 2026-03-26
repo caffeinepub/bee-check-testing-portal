@@ -185,8 +185,7 @@ const ROLE_ACCENT: Record<string, string> = {
   complianceofficer: "#ef4444",
 };
 
-const BEE_LOGO =
-  "/assets/uploads/bee_logo-019d1e60-576f-76be-ad3c-c0e444c648f1-1.png";
+const BEE_LOGO = "/assets/generated/bee_logo_transparent.png";
 
 export default function Layout({
   children,
@@ -216,24 +215,16 @@ export default function Layout({
             "linear-gradient(180deg, #0d2252 0%, #1a3a6b 60%, #1e4080 100%)",
         }}
       >
-        {/* Logo + Brand */}
+        {/* Logo area — full logo with baked-in text */}
         <div
-          className="flex items-center gap-3 px-4 py-4 border-b"
+          className="flex flex-col items-center px-3 py-3 border-b"
           style={{ borderColor: "rgba(200,169,81,0.3)" }}
         >
           <img
             src={BEE_LOGO}
-            alt="BEE Logo"
-            className="h-10 w-10 object-contain rounded bg-white p-0.5"
+            alt="Bureau of Energy Efficiency — Ministry of Power, Government of India"
+            className="w-full max-h-14 object-contain bg-white rounded-lg p-1"
           />
-          <div>
-            <p className="text-white font-bold text-sm leading-tight">
-              BEE Check
-            </p>
-            <p className="text-xs leading-tight" style={{ color: accent }}>
-              Testing Portal
-            </p>
-          </div>
         </div>
 
         {/* Role Badge */}
@@ -302,19 +293,18 @@ export default function Layout({
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <img src={BEE_LOGO} alt="BEE" className="h-8 w-8 object-contain" />
-            <div>
-              <p className="text-sm font-bold" style={{ color: "#1a3a6b" }}>
-                Bureau of Energy Efficiency
-              </p>
-              <p className="text-xs text-gray-500">
-                Standards &amp; Labelling Programme — Check Testing Portal
-              </p>
-            </div>
+        <header className="flex items-center justify-between px-6 py-2 bg-white border-b border-gray-200 shadow-sm">
+          <div className="flex items-center">
+            <img
+              src={BEE_LOGO}
+              alt="Bureau of Energy Efficiency — Ministry of Power, Government of India"
+              className="h-12 max-w-xs object-contain"
+            />
           </div>
           <div className="flex items-center gap-3">
+            <p className="text-xs text-gray-500 hidden md:block">
+              Standards &amp; Labelling Programme — Check Testing Portal
+            </p>
             <button
               type="button"
               data-ocid="nav.notifications_button"
