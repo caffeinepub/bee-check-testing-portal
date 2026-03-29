@@ -12,6 +12,11 @@ export type SecondCheckStatus =
   | "InvoiceRaised"
   | "NFT";
 
+export type OfficialVerificationStatus =
+  | "Pending"
+  | "Published"
+  | "MismatchForwarded";
+
 export interface StatusLogEntry {
   status: SecondCheckStatus;
   date: string;
@@ -44,6 +49,12 @@ export interface SecondCheckSample {
   proposedDateRejectedReason?: string;
   blockedOn: string;
   statusLog: StatusLogEntry[];
+  /** Result submitted by the Test Lab when Test Done */
+  labResult?: "Pass" | "Fail";
+  /** BEE Official verdict on the 2nd check result */
+  officialVerdict?: "Pass" | "Fail";
+  /** Whether BEE Official has reviewed the 2nd check report */
+  officialVerificationStatus?: OfficialVerificationStatus;
 }
 
 interface SecondCheckContextType {
@@ -61,6 +72,15 @@ interface SecondCheckContextType {
     newStatus: SecondCheckStatus,
     remarks?: string,
   ) => void;
+  recordTestResult: (
+    sampleId: string,
+    result: "Pass" | "Fail",
+    remarks?: string,
+  ) => void;
+  submitOfficialVerdict: (
+    sampleId: string,
+    verdict: "Pass" | "Fail",
+  ) => "published" | "mismatch";
 }
 
 const SecondCheckContext = createContext<SecondCheckContextType | null>(null);
@@ -135,7 +155,6 @@ export function SecondCheckProvider({
     const fc = failedCases.find((c) => c.id === caseId);
     if (!fc) return;
     const now = new Date().toISOString().split("T")[0];
-    // Create 2 samples — one per lab
     const sample1: SecondCheckSample = {
       id: `SC-${caseId}-L1-${Date.now()}`,
       caseId,
@@ -274,6 +293,95 @@ export function SecondCheckProvider({
     );
   };
 
+  /**
+   * Called by Lab user when they confirm the Test Done result (Pass or Fail).
+   * Moves status to ReportUploaded and stores labResult.
+   */
+  const recordTestResult = (
+    sampleId: string,
+    result: "Pass" | "Fail",
+    remarks?: string,
+  ) => {
+    const today = new Date().toISOString().split("T")[0];
+    setSecondCheckSamples((prev) =>
+      prev.map((s) =>
+        s.id === sampleId
+          ? {
+              ...s,
+              status: "ReportUploaded" as SecondCheckStatus,
+              labResult: result,
+              officialVerificationStatus:
+                "Pending" as OfficialVerificationStatus,
+              statusLog: [
+                ...s.statusLog,
+                {
+                  status: "ReportUploaded" as SecondCheckStatus,
+                  date: today,
+                  remarks: `Lab Result: ${result}. ${remarks ?? ""}`.trim(),
+                },
+              ],
+            }
+          : s,
+      ),
+    );
+  };
+
+  /**
+   * BEE Official submits their verdict on a 2nd check report.
+   * Returns 'published' (Lab=Pass+Official=Pass) or 'mismatch' (Lab=Fail+Official=Pass).
+   */
+  const submitOfficialVerdict = (
+    sampleId: string,
+    verdict: "Pass" | "Fail",
+  ): "published" | "mismatch" => {
+    const sample = secondCheckSamples.find((s) => s.id === sampleId);
+    if (!sample) return "published";
+
+    const labResult = sample.labResult ?? "Fail";
+    let outcomeStatus: OfficialVerificationStatus;
+    let result: "published" | "mismatch";
+
+    if (labResult === "Pass" && verdict === "Pass") {
+      outcomeStatus = "Published";
+      result = "published";
+    } else if (labResult === "Fail" && verdict === "Pass") {
+      // Mismatch — forward to Director
+      outcomeStatus = "MismatchForwarded";
+      result = "mismatch";
+    } else {
+      // Lab=Pass+Official=Fail or Lab=Fail+Official=Fail → Published as Failed
+      outcomeStatus = "Published";
+      result = "published";
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    setSecondCheckSamples((prev) =>
+      prev.map((s) =>
+        s.id === sampleId
+          ? {
+              ...s,
+              officialVerdict: verdict,
+              officialVerificationStatus: outcomeStatus,
+              statusLog: [
+                ...s.statusLog,
+                {
+                  status: s.status,
+                  date: today,
+                  remarks: `BEE Official Verdict: ${verdict}. Outcome: ${
+                    outcomeStatus === "MismatchForwarded"
+                      ? "Mismatch — forwarded to Director"
+                      : "Published"
+                  }`,
+                },
+              ],
+            }
+          : s,
+      ),
+    );
+
+    return result;
+  };
+
   return (
     <SecondCheckContext.Provider
       value={{
@@ -287,6 +395,8 @@ export function SecondCheckProvider({
         approveTestDate,
         rejectTestDate,
         updateSampleStatus,
+        recordTestResult,
+        submitOfficialVerdict,
       }}
     >
       {children}

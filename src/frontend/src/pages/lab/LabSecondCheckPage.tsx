@@ -73,8 +73,12 @@ interface UpdateDialogState {
 }
 
 export default function LabSecondCheckPage() {
-  const { secondCheckSamples, proposeTestDate, updateSampleStatus } =
-    useSecondCheck();
+  const {
+    secondCheckSamples,
+    proposeTestDate,
+    updateSampleStatus,
+    recordTestResult,
+  } = useSecondCheck();
   // Show all 2nd check samples (in real app filter by lab user)
   const samples = secondCheckSamples;
 
@@ -147,13 +151,9 @@ export default function LabSecondCheckPage() {
       toast.error("Please select Pass or Fail.");
       return;
     }
-    updateSampleStatus(
-      dialog.sample.id,
-      "ReportUploaded",
-      `Result: ${testResult}. ${remarks}`,
-    );
+    recordTestResult(dialog.sample.id, testResult, remarks);
     toast.success(
-      `Test result recorded as ${testResult}. Status moved to Report Uploaded.`,
+      `Test result recorded as ${testResult}. Report sent to BEE Official for verification.`,
     );
     closeDialog();
   };

@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Textarea } from "@/components/ui/textarea";
 import {
   CheckCircle2,
@@ -84,13 +84,12 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
   const [samples, setSamples] = useState(initialLabSamples);
   const [testReports, setTestReports] =
     useState<TestReportEntry[]>(initialTestReports);
-  const [activeTab, setActiveTab] = useState(
+  const activeTab =
     defaultTab === "revert"
       ? "revert"
       : defaultTab === "testreport"
         ? "testreport"
-        : "tracking",
-  );
+        : "tracking";
 
   // Update Status Dialog state
   const [updateSample, setUpdateSample] = useState<
@@ -335,78 +334,303 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
     <div>
       <div className="mb-6">
         <h2 className="text-xl font-bold" style={{ color: "#1a3a6b" }}>
-          Sample Management
+          {activeTab === "testreport"
+            ? "Test Report"
+            : activeTab === "revert"
+              ? "Revert from BEE"
+              : "Sample Tracking"}
         </h2>
         <p className="text-gray-500 text-sm">
-          Track and update sample status through the testing lifecycle
+          {activeTab === "testreport"
+            ? "All Pass, Fail, and NFT cases forwarded to BEE Official for verification"
+            : activeTab === "revert"
+              ? "Samples returned from BEE due to documentation or compliance issues"
+              : "Track and update sample status through the testing lifecycle"}
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4" style={{ backgroundColor: "#e8eef7" }}>
-          <TabsTrigger
-            value="tracking"
-            data-ocid="lab.tracking.tab"
-            className="data-[state=active]:bg-[#1a3a6b] data-[state=active]:text-white"
-          >
-            Sample Tracking
-          </TabsTrigger>
-          <TabsTrigger
-            value="testreport"
-            data-ocid="lab.testreport.tab"
-            className="data-[state=active]:bg-[#1a3a6b] data-[state=active]:text-white"
-          >
-            <FileText size={14} className="mr-1.5" />
-            Test Report
-          </TabsTrigger>
-          <TabsTrigger
-            value="revert"
-            data-ocid="lab.revert.tab"
-            className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
-          >
-            <RotateCcw size={14} className="mr-1.5" />
-            Revert from BEE
-          </TabsTrigger>
-        </TabsList>
-
+      <div>
         {/* ── Sample Tracking Tab ── */}
-        <TabsContent value="tracking">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow style={{ backgroundColor: "#1a3a6b" }}>
-                  {[
-                    "#",
-                    "Category",
-                    "Brand",
-                    "Model",
-                    "Star",
-                    "Current Status",
-                    "Last Updated",
-                    "Actions",
-                  ].map((h) => (
-                    <TableHead
-                      key={h}
-                      className="text-white text-xs font-semibold"
+        {activeTab === "tracking" && (
+          <div>
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow style={{ backgroundColor: "#1a3a6b" }}>
+                    {[
+                      "#",
+                      "Category",
+                      "Brand",
+                      "Model",
+                      "Star",
+                      "Current Status",
+                      "Last Updated",
+                      "Actions",
+                    ].map((h) => (
+                      <TableHead
+                        key={h}
+                        className="text-white text-xs font-semibold"
+                      >
+                        {h}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {samples.map((s, i) => {
+                    const isTerminal = TERMINAL_LAB_STATUSES.includes(
+                      s.currentStatus,
+                    );
+                    const isNFT = s.currentStatus === "NFT";
+                    const isPassFail =
+                      s.currentStatus === "Pass" || s.currentStatus === "Fail";
+                    return (
+                      <TableRow
+                        key={s.id}
+                        data-ocid={`lab.sample.row.${i + 1}`}
+                        className="hover:bg-blue-50"
+                      >
+                        <TableCell className="text-xs text-gray-500">
+                          {i + 1}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {s.categoryName}
+                        </TableCell>
+                        <TableCell className="text-xs font-medium">
+                          {s.brandName}
+                        </TableCell>
+                        <TableCell className="text-xs font-mono">
+                          {s.modelNumber}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {"★".repeat(s.starRating)}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColorClass(s.currentStatus)}`}
+                          >
+                            {LAB_STATUS_LABELS[s.currentStatus]}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-xs text-gray-600">
+                          {lastUpdatedDate(s)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1.5">
+                            <Button
+                              data-ocid={`lab.update_status.button.${i + 1}`}
+                              variant="outline"
+                              size="sm"
+                              className={`h-6 text-xs px-2 ${
+                                isNFT
+                                  ? "border-red-300 text-red-700 bg-red-50 cursor-not-allowed opacity-70"
+                                  : isPassFail
+                                    ? "border-indigo-300 text-indigo-700 bg-indigo-50"
+                                    : isTerminal
+                                      ? "border-green-300 text-green-700"
+                                      : "border-blue-300 text-blue-700 hover:bg-blue-50"
+                              }`}
+                              onClick={() => openUpdateDialog(s)}
+                              disabled={isTerminal}
+                            >
+                              {isNFT
+                                ? "NFT — No Further Action"
+                                : isTerminal
+                                  ? "Completed"
+                                  : "Update Status"}
+                            </Button>
+                            <Button
+                              data-ocid={`lab.view_log.button.${i + 1}`}
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-xs px-2 text-gray-600 hover:bg-gray-100"
+                              onClick={() => setLogSample(s)}
+                            >
+                              View Log
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+
+        {/* ── Test Report Tab ── */}
+        {activeTab === "testreport" && (
+          <div>
+            <div className="mb-3 flex items-center gap-2 p-3 rounded-lg bg-indigo-50 border border-indigo-200">
+              <FileText size={16} className="text-indigo-600 flex-shrink-0" />
+              <p className="text-sm text-indigo-700">
+                All Pass, Fail, and NFT samples are listed here. These are
+                automatically forwarded to BEE Official for verification.
+              </p>
+            </div>
+
+            {/* Summary badges */}
+            <div className="flex gap-3 mb-4">
+              {(["Pass", "Fail", "NFT"] as const).map((s) => {
+                const count = testReports.filter(
+                  (r) => r.finalStatus === s,
+                ).length;
+                return (
+                  <div
+                    key={s}
+                    className={`px-4 py-2 rounded-lg border text-sm font-semibold ${finalStatusBadge(s)}`}
+                  >
+                    {s}: {count}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow style={{ backgroundColor: "#1a3a6b" }}>
+                    {[
+                      "#",
+                      "Category",
+                      "Brand",
+                      "Model",
+                      "Star",
+                      "Final Status",
+                      "Date",
+                      "Remarks",
+                      "Documents",
+                      "BEE Verification",
+                    ].map((h) => (
+                      <TableHead
+                        key={h}
+                        className="text-white text-xs font-semibold"
+                      >
+                        {h}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {testReports.length === 0 && (
+                    <TableRow data-ocid="lab.testreport.empty_state">
+                      <TableCell
+                        colSpan={10}
+                        className="text-center py-8 text-gray-400 text-sm"
+                      >
+                        No test reports yet. Update samples to Pass, Fail, or
+                        NFT to see them here.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {testReports.map((r, i) => (
+                    <TableRow
+                      key={`${r.sampleId}-${i}`}
+                      data-ocid={`lab.testreport.item.${i + 1}`}
+                      className="hover:bg-blue-50"
                     >
-                      {h}
-                    </TableHead>
+                      <TableCell className="text-xs text-gray-500">
+                        {i + 1}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {r.categoryName}
+                      </TableCell>
+                      <TableCell className="text-xs font-medium">
+                        {r.brandName}
+                      </TableCell>
+                      <TableCell className="text-xs font-mono">
+                        {r.modelNumber}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {"★".repeat(r.starRating)}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${finalStatusBadge(r.finalStatus)}`}
+                        >
+                          {r.finalStatus === "Pass" && <span>✓ Pass</span>}
+                          {r.finalStatus === "Fail" && <span>✗ Fail</span>}
+                          {r.finalStatus === "NFT" && <span>⚠ NFT</span>}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600">
+                        {r.date}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600 max-w-[140px] truncate">
+                        {r.remarks || "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          data-ocid={`lab.testreport.docs.button.${i + 1}`}
+                          variant="outline"
+                          size="sm"
+                          className="h-6 text-xs px-2 border-blue-300 text-blue-700 hover:bg-blue-50"
+                          onClick={() => setDocsEntry(r)}
+                        >
+                          <Paperclip size={11} className="mr-1" />
+                          {r.documents.length} file
+                          {r.documents.length !== 1 ? "s" : ""}
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${beeBadge(r.beeVerificationStatus)}`}
+                        >
+                          {r.beeVerificationStatus === "Verified"
+                            ? "✓ Verified"
+                            : r.beeVerificationStatus === "SendBack"
+                              ? "Sent Back"
+                              : "Pending"}
+                        </span>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {samples.map((s, i) => {
-                  const isTerminal = TERMINAL_LAB_STATUSES.includes(
-                    s.currentStatus,
-                  );
-                  const isNFT = s.currentStatus === "NFT";
-                  const isPassFail =
-                    s.currentStatus === "Pass" || s.currentStatus === "Fail";
-                  return (
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+
+        {/* ── Revert from BEE Tab ── */}
+        {activeTab === "revert" && (
+          <div>
+            <div className="mb-3 flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+              <RotateCcw size={16} className="text-red-600 flex-shrink-0" />
+              <p className="text-sm text-red-700">
+                Samples listed below have been returned from BEE due to
+                documentation or compliance issues.
+              </p>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow style={{ backgroundColor: "#7f1d1d" }}>
+                    {[
+                      "#",
+                      "Category",
+                      "Brand",
+                      "Model",
+                      "Star",
+                      "Return Reason",
+                      "Return Date",
+                      "Status",
+                    ].map((h) => (
+                      <TableHead
+                        key={h}
+                        className="text-white text-xs font-semibold"
+                      >
+                        {h}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {revertedFromBEE.map((s, i) => (
                     <TableRow
                       key={s.id}
-                      data-ocid={`lab.sample.row.${i + 1}`}
-                      className="hover:bg-blue-50"
+                      data-ocid={`lab.reverted.row.${i + 1}`}
+                      className="hover:bg-red-50"
                     >
                       <TableCell className="text-xs text-gray-500">
                         {i + 1}
@@ -424,259 +648,26 @@ export default function AssignedSamplesPage({ defaultTab }: Props) {
                         {"★".repeat(s.starRating)}
                       </TableCell>
                       <TableCell>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColorClass(s.currentStatus)}`}
-                        >
-                          {LAB_STATUS_LABELS[s.currentStatus]}
+                        <span className="text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                          {s.returnReason}
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-gray-600">
-                        {lastUpdatedDate(s)}
+                        {s.returnDate}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1.5">
-                          <Button
-                            data-ocid={`lab.update_status.button.${i + 1}`}
-                            variant="outline"
-                            size="sm"
-                            className={`h-6 text-xs px-2 ${
-                              isNFT
-                                ? "border-red-300 text-red-700 bg-red-50 cursor-not-allowed opacity-70"
-                                : isPassFail
-                                  ? "border-indigo-300 text-indigo-700 bg-indigo-50"
-                                  : isTerminal
-                                    ? "border-green-300 text-green-700"
-                                    : "border-blue-300 text-blue-700 hover:bg-blue-50"
-                            }`}
-                            onClick={() => openUpdateDialog(s)}
-                            disabled={isTerminal}
-                          >
-                            {isNFT
-                              ? "NFT — No Further Action"
-                              : isTerminal
-                                ? "Completed"
-                                : "Update Status"}
-                          </Button>
-                          <Button
-                            data-ocid={`lab.view_log.button.${i + 1}`}
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-xs px-2 text-gray-600 hover:bg-gray-100"
-                            onClick={() => setLogSample(s)}
-                          >
-                            View Log
-                          </Button>
-                        </div>
+                        <Badge className="bg-red-100 text-red-800 border border-red-300 text-xs font-medium hover:bg-red-100">
+                          Returned from BEE
+                        </Badge>
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-
-        {/* ── Test Report Tab ── */}
-        <TabsContent value="testreport">
-          <div className="mb-3 flex items-center gap-2 p-3 rounded-lg bg-indigo-50 border border-indigo-200">
-            <FileText size={16} className="text-indigo-600 flex-shrink-0" />
-            <p className="text-sm text-indigo-700">
-              All Pass, Fail, and NFT samples are listed here. These are
-              automatically forwarded to BEE Official for verification.
-            </p>
-          </div>
-
-          {/* Summary badges */}
-          <div className="flex gap-3 mb-4">
-            {(["Pass", "Fail", "NFT"] as const).map((s) => {
-              const count = testReports.filter(
-                (r) => r.finalStatus === s,
-              ).length;
-              return (
-                <div
-                  key={s}
-                  className={`px-4 py-2 rounded-lg border text-sm font-semibold ${finalStatusBadge(s)}`}
-                >
-                  {s}: {count}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow style={{ backgroundColor: "#1a3a6b" }}>
-                  {[
-                    "#",
-                    "Category",
-                    "Brand",
-                    "Model",
-                    "Star",
-                    "Final Status",
-                    "Date",
-                    "Remarks",
-                    "Documents",
-                    "BEE Verification",
-                  ].map((h) => (
-                    <TableHead
-                      key={h}
-                      className="text-white text-xs font-semibold"
-                    >
-                      {h}
-                    </TableHead>
                   ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {testReports.length === 0 && (
-                  <TableRow data-ocid="lab.testreport.empty_state">
-                    <TableCell
-                      colSpan={10}
-                      className="text-center py-8 text-gray-400 text-sm"
-                    >
-                      No test reports yet. Update samples to Pass, Fail, or NFT
-                      to see them here.
-                    </TableCell>
-                  </TableRow>
-                )}
-                {testReports.map((r, i) => (
-                  <TableRow
-                    key={`${r.sampleId}-${i}`}
-                    data-ocid={`lab.testreport.item.${i + 1}`}
-                    className="hover:bg-blue-50"
-                  >
-                    <TableCell className="text-xs text-gray-500">
-                      {i + 1}
-                    </TableCell>
-                    <TableCell className="text-xs">{r.categoryName}</TableCell>
-                    <TableCell className="text-xs font-medium">
-                      {r.brandName}
-                    </TableCell>
-                    <TableCell className="text-xs font-mono">
-                      {r.modelNumber}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {"★".repeat(r.starRating)}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${finalStatusBadge(r.finalStatus)}`}
-                      >
-                        {r.finalStatus === "Pass" && <span>✓ Pass</span>}
-                        {r.finalStatus === "Fail" && <span>✗ Fail</span>}
-                        {r.finalStatus === "NFT" && <span>⚠ NFT</span>}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600">
-                      {r.date}
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600 max-w-[140px] truncate">
-                      {r.remarks || "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        data-ocid={`lab.testreport.docs.button.${i + 1}`}
-                        variant="outline"
-                        size="sm"
-                        className="h-6 text-xs px-2 border-blue-300 text-blue-700 hover:bg-blue-50"
-                        onClick={() => setDocsEntry(r)}
-                      >
-                        <Paperclip size={11} className="mr-1" />
-                        {r.documents.length} file
-                        {r.documents.length !== 1 ? "s" : ""}
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${beeBadge(r.beeVerificationStatus)}`}
-                      >
-                        {r.beeVerificationStatus === "Verified"
-                          ? "✓ Verified"
-                          : r.beeVerificationStatus === "SendBack"
-                            ? "Sent Back"
-                            : "Pending"}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableBody>
+              </Table>
+            </div>
           </div>
-        </TabsContent>
-
-        {/* ── Revert from BEE Tab ── */}
-        <TabsContent value="revert">
-          <div className="mb-3 flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
-            <RotateCcw size={16} className="text-red-600 flex-shrink-0" />
-            <p className="text-sm text-red-700">
-              Samples listed below have been returned from BEE due to
-              documentation or compliance issues.
-            </p>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow style={{ backgroundColor: "#7f1d1d" }}>
-                  {[
-                    "#",
-                    "Category",
-                    "Brand",
-                    "Model",
-                    "Star",
-                    "Return Reason",
-                    "Return Date",
-                    "Status",
-                  ].map((h) => (
-                    <TableHead
-                      key={h}
-                      className="text-white text-xs font-semibold"
-                    >
-                      {h}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {revertedFromBEE.map((s, i) => (
-                  <TableRow
-                    key={s.id}
-                    data-ocid={`lab.reverted.row.${i + 1}`}
-                    className="hover:bg-red-50"
-                  >
-                    <TableCell className="text-xs text-gray-500">
-                      {i + 1}
-                    </TableCell>
-                    <TableCell className="text-xs">{s.categoryName}</TableCell>
-                    <TableCell className="text-xs font-medium">
-                      {s.brandName}
-                    </TableCell>
-                    <TableCell className="text-xs font-mono">
-                      {s.modelNumber}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {"★".repeat(s.starRating)}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
-                        {s.returnReason}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-xs text-gray-600">
-                      {s.returnDate}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-red-100 text-red-800 border border-red-300 text-xs font-medium hover:bg-red-100">
-                        Returned from BEE
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
 
       {/* ── Update Status Dialog ── */}
       <Dialog

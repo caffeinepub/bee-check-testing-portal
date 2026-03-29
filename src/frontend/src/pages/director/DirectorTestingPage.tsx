@@ -443,6 +443,11 @@ export default function DirectorTestingPage() {
                       </td>
                       <td className="px-4 py-3 font-semibold text-gray-800 whitespace-nowrap">
                         {row.appliance}
+                        {row.is2ndCheck && (
+                          <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-semibold">
+                            2nd Check
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
                         {row.brand}

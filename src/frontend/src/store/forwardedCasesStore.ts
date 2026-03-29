@@ -26,6 +26,8 @@ export interface ForwardedCase {
   forwardedBy: string;
   forwardedAt: string;
   forwardingNote: string;
+  /** True when this is a 2nd Check Test mismatch case */
+  is2ndCheck?: boolean;
 }
 
 let _cases: ForwardedCase[] = [
