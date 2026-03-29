@@ -133,6 +133,8 @@ export default function LabResultsPage() {
           year: "numeric",
         }),
         lab: sc2Sample.lab1Name,
+        labVerdict: "Fail",
+        officialVerdict: "Pass",
         testResult: "Fail",
         status: "Pending Review",
         remark: sc2Remarks,

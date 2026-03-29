@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  AlertTriangle,
   CheckCircle,
   CheckCircle2,
   ChevronRight,
@@ -23,6 +24,7 @@ import {
   FlaskConical,
   RotateCcw,
   ShieldCheck,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -33,11 +35,9 @@ import {
   updateForwardedCase,
 } from "../../store/forwardedCasesStore";
 
-// ── types ─────────────────────────────────────────────────────────────────────
 type Status = "Pending Review" | "Director Approved" | "Sent Back";
 type FilterTab = "all" | "pending" | "approved" | "sentback";
 
-// ── doc display helpers ───────────────────────────────────────────────────────
 function DocTypeBadge({ type }: { type: string }) {
   if (type === "PDF")
     return (
@@ -71,7 +71,6 @@ function DocIcon({ type }: { type: string }) {
   return <FileType2 size={14} className="text-blue-500" />;
 }
 
-// ── star display ──────────────────────────────────────────────────────────────
 const STAR_INDICES = [0, 1, 2, 3, 4];
 function Stars({ count }: { count: number }) {
   return (
@@ -85,7 +84,6 @@ function Stars({ count }: { count: number }) {
   );
 }
 
-// ── status badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: Status }) {
   if (status === "Director Approved")
     return (
@@ -109,52 +107,64 @@ function StatusBadge({ status }: { status: Status }) {
   );
 }
 
-function ResultBadge({ result }: { result: "Pass" | "Fail" }) {
-  if (result === "Pass")
+function LabVerdictBadge({ verdict }: { verdict: "Pass" | "Fail" }) {
+  if (verdict === "Fail")
     return (
-      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+        <XCircle size={10} />
+        Fail
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+      <CheckCircle2 size={10} />
+      Pass
+    </span>
+  );
+}
+
+function OfficialVerdictBadge({ verdict }: { verdict: "Pass" | "Fail" }) {
+  if (verdict === "Pass")
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+        <CheckCircle2 size={10} />
         Pass
       </span>
     );
   return (
-    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+      <XCircle size={10} />
       Fail
     </span>
   );
 }
 
-// ── workflow banner steps ─────────────────────────────────────────────────────
 const STEPS = [
   { label: "Product Purchased", state: "done" },
-  { label: "Test Lab Testing", state: "done" },
-  { label: "BEE Official L2 Approved", state: "done" },
-  { label: "Director Final Review", state: "active" },
+  { label: "Test Lab: FAIL", state: "done" },
+  { label: "BEE Official: PASS (Mismatch)", state: "done" },
+  { label: "Director Final Arbitration", state: "active" },
   { label: "Compliance Cleared", state: "pending" },
 ];
 
-// ── component ─────────────────────────────────────────────────────────────────
 export default function DirectorTestingPage() {
   const [cases, setCases] = useState<ForwardedCase[]>(getForwardedCases);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
-  // Approve dialog state
   const [approveTarget, setApproveTarget] = useState<ForwardedCase | null>(
     null,
   );
   const [approveRemark, setApproveRemark] = useState("");
   const [approveError, setApproveError] = useState(false);
 
-  // Send Back dialog state
   const [sendBackTarget, setSendBackTarget] = useState<ForwardedCase | null>(
     null,
   );
   const [sendBackReason, setSendBackReason] = useState("");
   const [sendBackError, setSendBackError] = useState(false);
 
-  // View docs dialog state
   const [viewDocsCase, setViewDocsCase] = useState<ForwardedCase | null>(null);
 
-  // Subscribe to store updates
   useEffect(() => {
     return subscribeForwardedCases(() => {
       setCases(getForwardedCases());
@@ -215,10 +225,10 @@ export default function DirectorTestingPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* ── Page Header ── */}
-      <div className="flex items-center gap-3">
+      {/* Page Header */}
+      <div className="flex items-start gap-3">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
           style={{ background: "linear-gradient(135deg, #1a3a6b, #0f2d57)" }}
         >
           <ShieldCheck size={20} className="text-white" />
@@ -227,18 +237,52 @@ export default function DirectorTestingPage() {
           <h2 className="text-xl font-bold" style={{ color: "#1a3a6b" }}>
             Director Testing Module
           </h2>
-          <p className="text-sm text-gray-500">
-            Final approval authority · BEE Director L3 Sign-off
+          <p className="text-xs mt-0.5 flex items-center flex-wrap gap-1.5">
+            <span className="inline-flex items-center gap-1 font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
+              <AlertTriangle size={11} />
+              Mismatch Cases Only
+            </span>
+            <span className="text-gray-500">
+              Test Lab: <span className="font-semibold text-red-600">Fail</span>
+              {" | "}
+              BEE Official:{" "}
+              <span className="font-semibold text-emerald-600">Pass</span>
+              {" — Escalated for Director Final Arbitration"}
+            </span>
           </p>
         </div>
       </div>
 
-      {/* ── Summary Cards ── */}
+      {/* Mismatch Notice */}
+      <div
+        className="rounded-xl px-5 py-3 flex items-start gap-3"
+        style={{ backgroundColor: "#fefce8", border: "1px solid #fde68a" }}
+      >
+        <AlertTriangle
+          size={18}
+          className="text-amber-600 flex-shrink-0 mt-0.5"
+        />
+        <div>
+          <p className="text-sm font-semibold text-amber-800">
+            Only Mismatch Cases are shown here
+          </p>
+          <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+            These samples were tested by the Test Lab (result:{" "}
+            <strong>Fail</strong>) and subsequently reviewed by the BEE Official
+            (verdict: <strong>Pass</strong>). Because the verdicts differ, the
+            case is escalated to the Director for final arbitration. Cases where
+            both Lab and BEE Official agree are resolved automatically and do
+            not appear here.
+          </p>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           {
-            label: "BEE Official Approved",
-            value: 39,
+            label: "Mismatch Cases Forwarded",
+            value: cases.length,
             accent: "#1a3a6b",
             icon: ClipboardCheck,
           },
@@ -288,7 +332,7 @@ export default function DirectorTestingPage() {
         ))}
       </div>
 
-      {/* ── Workflow Banner ── */}
+      {/* Workflow Banner */}
       <div
         className="rounded-xl px-5 py-4"
         style={{
@@ -296,7 +340,7 @@ export default function DirectorTestingPage() {
         }}
       >
         <p className="text-xs font-semibold uppercase tracking-widest text-blue-300 mb-3">
-          Approval Workflow
+          Mismatch Escalation Workflow
         </p>
         <div className="flex items-center gap-1 overflow-x-auto pb-1">
           {STEPS.map((step, i) => (
@@ -324,7 +368,7 @@ export default function DirectorTestingPage() {
                   )}
                 </div>
                 <span
-                  className={`text-xs font-semibold text-center leading-tight max-w-[80px] ${
+                  className={`text-xs font-semibold text-center leading-tight max-w-[90px] ${
                     step.state === "done"
                       ? "text-emerald-300"
                       : step.state === "active"
@@ -346,11 +390,11 @@ export default function DirectorTestingPage() {
         </div>
       </div>
 
-      {/* ── Filter Tabs ── */}
+      {/* Filter Tabs */}
       <div className="flex items-center gap-2 flex-wrap">
         {(
           [
-            { key: "all", label: `All (${cases.length})` },
+            { key: "all", label: `All Mismatch Cases (${cases.length})` },
             { key: "pending", label: `Pending Review (${pendingCount})` },
             { key: "approved", label: `Director Approved (${approvedCount})` },
             { key: "sentback", label: `Sent Back (${sentBackCount})` },
@@ -373,24 +417,25 @@ export default function DirectorTestingPage() {
         ))}
       </div>
 
-      {/* ── Main Table ── */}
+      {/* Main Table */}
       <Card
         className="border-0"
         style={{ boxShadow: "0 2px 16px rgba(26,58,107,0.09)" }}
       >
         <CardHeader className="pb-2 pt-5 px-5">
-          <div className="flex items-center justify-between">
-            <CardTitle
-              className="text-sm font-bold"
-              style={{ color: "#1a3a6b" }}
-            >
-              Test Cases — BEE Official L2 Approved
-            </CardTitle>
+          <div className="flex items-center gap-2">
             <Badge
               variant="outline"
               className="text-xs border-blue-200 text-blue-700"
             >
               {filtered.length} records
+            </Badge>
+            <Badge
+              variant="outline"
+              className="text-xs border-amber-300 text-amber-700 bg-amber-50"
+            >
+              <AlertTriangle size={10} className="mr-1" />
+              All are Mismatch Cases
             </Badge>
           </div>
         </CardHeader>
@@ -413,7 +458,8 @@ export default function DirectorTestingPage() {
                     "BEE Official",
                     "Forwarded On",
                     "Test Lab",
-                    "Test Result",
+                    "Lab Verdict",
+                    "Official Verdict",
                     "Documents",
                     "Director Decision",
                     "Remarks",
@@ -433,6 +479,10 @@ export default function DirectorTestingPage() {
                 {filtered.map((row, idx) => {
                   const pendingIdx = pendingIdxMap.get(row.reportId);
                   const docCount = row.attachedDocuments?.length ?? 0;
+                  const labVerdict: "Pass" | "Fail" =
+                    (row as any).labVerdict ?? "Fail";
+                  const officialVerdict: "Pass" | "Fail" =
+                    (row as any).officialVerdict ?? "Pass";
                   return (
                     <tr
                       key={row.reportId}
@@ -442,12 +492,20 @@ export default function DirectorTestingPage() {
                         {idx + 1}
                       </td>
                       <td className="px-4 py-3 font-semibold text-gray-800 whitespace-nowrap">
-                        {row.appliance}
-                        {row.is2ndCheck && (
-                          <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-semibold">
-                            2nd Check
-                          </span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          <span>{row.appliance}</span>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span className="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-semibold">
+                              <AlertTriangle size={9} />
+                              Mismatch
+                            </span>
+                            {row.is2ndCheck && (
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-semibold">
+                                2nd Check
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
                         {row.brand}
@@ -468,7 +526,10 @@ export default function DirectorTestingPage() {
                         {row.lab}
                       </td>
                       <td className="px-4 py-3">
-                        <ResultBadge result={row.testResult} />
+                        <LabVerdictBadge verdict={labVerdict} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <OfficialVerdictBadge verdict={officialVerdict} />
                       </td>
                       <td className="px-4 py-3">
                         {docCount > 0 ? (
@@ -545,9 +606,13 @@ export default function DirectorTestingPage() {
                 className="py-16 flex flex-col items-center gap-3"
                 data-ocid="director_testing.empty_state"
               >
-                <FlaskConical size={36} className="text-gray-200" />
-                <p className="text-sm text-gray-400 font-medium">
-                  No records in this category
+                <CheckCircle2 size={36} className="text-emerald-300" />
+                <p className="text-sm text-gray-600 font-semibold">
+                  No mismatch cases pending
+                </p>
+                <p className="text-xs text-gray-400 text-center max-w-xs">
+                  All current lab results have matching verdicts between Test
+                  Lab and BEE Official. No escalation required at this time.
                 </p>
               </div>
             )}
@@ -555,7 +620,7 @@ export default function DirectorTestingPage() {
         </CardContent>
       </Card>
 
-      {/* ── View Documents Dialog ── */}
+      {/* View Docs Dialog */}
       <Dialog
         open={!!viewDocsCase}
         onOpenChange={(open) => !open && setViewDocsCase(null)}
@@ -571,7 +636,6 @@ export default function DirectorTestingPage() {
           </DialogHeader>
           {viewDocsCase && (
             <div className="space-y-4">
-              {/* Forwarding Note */}
               {viewDocsCase.forwardingNote && (
                 <div
                   className="rounded-lg p-3"
@@ -592,8 +656,6 @@ export default function DirectorTestingPage() {
                   </p>
                 </div>
               )}
-
-              {/* Test Lab Docs */}
               {viewDocsCase.attachedDocuments.filter(
                 (d) => d.uploadedBy === "Test Lab",
               ).length > 0 && (
@@ -639,8 +701,6 @@ export default function DirectorTestingPage() {
                   </div>
                 </div>
               )}
-
-              {/* BEE Official Docs */}
               {viewDocsCase.attachedDocuments.filter(
                 (d) => d.uploadedBy === "BEE Official",
               ).length > 0 && (
@@ -691,7 +751,7 @@ export default function DirectorTestingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Approve Final Dialog ── */}
+      {/* Approve Dialog */}
       <Dialog
         open={!!approveTarget}
         onOpenChange={(open) => {
@@ -716,6 +776,25 @@ export default function DirectorTestingPage() {
           </DialogHeader>
           {approveTarget && (
             <div className="space-y-4">
+              <div
+                className="rounded-lg p-3 flex items-start gap-2"
+                style={{
+                  backgroundColor: "#fefce8",
+                  border: "1px solid #fde68a",
+                }}
+              >
+                <AlertTriangle
+                  size={15}
+                  className="text-amber-600 flex-shrink-0 mt-0.5"
+                />
+                <p className="text-xs text-amber-800">
+                  <span className="font-semibold">Mismatch Case:</span> Test Lab
+                  submitted <span className="font-bold text-red-700">Fail</span>
+                  , BEE Official reviewed as{" "}
+                  <span className="font-bold text-emerald-700">Pass</span>.
+                  Director arbitration required.
+                </p>
+              </div>
               <div
                 className="rounded-lg p-4"
                 style={{
@@ -760,9 +839,19 @@ export default function DirectorTestingPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 font-medium">
-                      Test Result
+                      Lab Verdict
                     </p>
-                    <ResultBadge result={approveTarget.testResult} />
+                    <LabVerdictBadge
+                      verdict={(approveTarget as any).labVerdict ?? "Fail"}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium">
+                      Official Verdict
+                    </p>
+                    <OfficialVerdictBadge
+                      verdict={(approveTarget as any).officialVerdict ?? "Pass"}
+                    />
                   </div>
                   {approveTarget.attachedDocuments?.length > 0 && (
                     <div className="col-span-2">
@@ -826,7 +915,7 @@ export default function DirectorTestingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Send Back Dialog ── */}
+      {/* Send Back Dialog */}
       <Dialog
         open={!!sendBackTarget}
         onOpenChange={(open) => {
@@ -851,6 +940,24 @@ export default function DirectorTestingPage() {
           </DialogHeader>
           {sendBackTarget && (
             <div className="space-y-4">
+              <div
+                className="rounded-lg p-3 flex items-start gap-2"
+                style={{
+                  backgroundColor: "#fefce8",
+                  border: "1px solid #fde68a",
+                }}
+              >
+                <AlertTriangle
+                  size={15}
+                  className="text-amber-600 flex-shrink-0 mt-0.5"
+                />
+                <p className="text-xs text-amber-800">
+                  <span className="font-semibold">Mismatch Case:</span> Test Lab
+                  submitted <span className="font-bold text-red-700">Fail</span>
+                  , BEE Official reviewed as{" "}
+                  <span className="font-bold text-emerald-700">Pass</span>.
+                </p>
+              </div>
               <div
                 className="rounded-lg p-4"
                 style={{
@@ -895,9 +1002,21 @@ export default function DirectorTestingPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 font-medium">
-                      Test Result
+                      Lab Verdict
                     </p>
-                    <ResultBadge result={sendBackTarget.testResult} />
+                    <LabVerdictBadge
+                      verdict={(sendBackTarget as any).labVerdict ?? "Fail"}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium">
+                      Official Verdict
+                    </p>
+                    <OfficialVerdictBadge
+                      verdict={
+                        (sendBackTarget as any).officialVerdict ?? "Pass"
+                      }
+                    />
                   </div>
                 </div>
               </div>

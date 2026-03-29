@@ -198,6 +198,8 @@ export default function ReviewReportsPage() {
         forwardingNote:
           forwardingNote ||
           "Test report reviewed. All parameters verified. Forwarding for Director final approval.",
+        labVerdict: selectedReport.result as "Pass" | "Fail",
+        officialVerdict: "Pass" as "Pass" | "Fail",
         attachedDocuments: allDocs,
       };
       addForwardedCase(forwardedCase);

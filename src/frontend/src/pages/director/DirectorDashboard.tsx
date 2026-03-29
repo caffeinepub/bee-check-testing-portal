@@ -7,6 +7,7 @@ import {
   CheckCircle,
   Clock,
   DollarSign,
+  FileText,
   Map as MapIcon,
   Package,
   ShoppingCart,
@@ -240,6 +241,107 @@ const recentActivity = [
   },
 ];
 
+// 2nd Check Test data
+const secondCheckKpis = [
+  {
+    label: "Total Cases",
+    value: 7,
+    color: "#1a3a6b",
+    bg: "#eff6ff",
+    icon: FileText,
+  },
+  {
+    label: "Pass",
+    value: 3,
+    color: "#059669",
+    bg: "#ecfdf5",
+    icon: CheckCircle,
+  },
+  { label: "Fail", value: 1, color: "#dc2626", bg: "#fef2f2", icon: XCircle },
+  {
+    label: "In Progress",
+    value: 2,
+    color: "#ea580c",
+    bg: "#fff7ed",
+    icon: Clock,
+  },
+  {
+    label: "Awaiting CO Approval",
+    value: 1,
+    color: "#7c3aed",
+    bg: "#f5f3ff",
+    icon: AlertTriangle,
+  },
+];
+
+const secondCheckCases = [
+  {
+    id: "2CT-001",
+    appliance: "Samsung 1.5T Split AC",
+    brand: "Samsung",
+    lab1: "NABL Lab Delhi",
+    lab2: "TERI Lab Mumbai",
+    lab1Result: "Pass",
+    lab2Result: "Pass",
+    status: "Published — Passed",
+    statusColor: "#059669",
+    statusBg: "#ecfdf5",
+    date: "12 Feb 2025",
+  },
+  {
+    id: "2CT-002",
+    appliance: "LG 5-Star Refrigerator",
+    brand: "LG",
+    lab1: "CPRI Bangalore",
+    lab2: "ETDC Pune",
+    lab1Result: "Fail",
+    lab2Result: "Pass",
+    status: "Mismatch → Director",
+    statusColor: "#7c3aed",
+    statusBg: "#f5f3ff",
+    date: "10 Feb 2025",
+  },
+  {
+    id: "2CT-003",
+    appliance: "Voltas 3-Star Window AC",
+    brand: "Voltas",
+    lab1: "NABL Lab Delhi",
+    lab2: "ETDC Pune",
+    lab1Result: "Pass",
+    lab2Result: "Pass",
+    status: "Published — Passed",
+    statusColor: "#059669",
+    statusBg: "#ecfdf5",
+    date: "08 Feb 2025",
+  },
+  {
+    id: "2CT-004",
+    appliance: "Whirlpool Direct Cool Fridge",
+    brand: "Whirlpool",
+    lab1: "CPRI Bangalore",
+    lab2: "TERI Lab Mumbai",
+    lab1Result: "—",
+    lab2Result: "—",
+    status: "Awaiting CO Approval",
+    statusColor: "#7c3aed",
+    statusBg: "#f5f3ff",
+    date: "07 Feb 2025",
+  },
+  {
+    id: "2CT-005",
+    appliance: "Blue Star Cassette AC",
+    brand: "Blue Star",
+    lab1: "ETDC Pune",
+    lab2: "NABL Lab Delhi",
+    lab1Result: "—",
+    lab2Result: "—",
+    status: "Under Testing",
+    statusColor: "#ea580c",
+    statusBg: "#fff7ed",
+    date: "05 Feb 2025",
+  },
+];
+
 function trendPct(current: number, prev: number) {
   return Math.round(((current - prev) / prev) * 100);
 }
@@ -250,7 +352,9 @@ function TrendBadge({ current, prev }: { current: number; prev: number }) {
   return (
     <div className="flex flex-col items-end gap-0.5">
       <span
-        className={`inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full ${up ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
+        className={`inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+          up ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+        }`}
       >
         {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
         {Math.abs(pct)}%
@@ -273,14 +377,6 @@ const activityBadgeStyle: Record<string, { label: string; cls: string }> = {
   reverted: { label: "Reverted", cls: "bg-amber-100 text-amber-800" },
   new: { label: "New", cls: "bg-blue-100 text-blue-800" },
 };
-
-const pipeline = [
-  { label: "Target", value: 245, color: "#1a3a6b", bg: "#eff6ff" },
-  { label: "Blocked", value: 89, color: "#d97706", bg: "#fffbeb" },
-  { label: "Purchased", value: 67, color: "#0284c7", bg: "#f0f9ff" },
-  { label: "Under Test", value: 22, color: "#7c3aed", bg: "#f5f3ff" },
-  { label: "Pass", value: 38, color: "#059669", bg: "#ecfdf5" },
-];
 
 export default function DirectorDashboard({ onNavigate }: Props) {
   return (
@@ -424,74 +520,178 @@ export default function DirectorDashboard({ onNavigate }: Props) {
         </div>
       </section>
 
-      {/* Pipeline Funnel */}
-      <section data-ocid="director.pipeline.section">
+      {/* 2nd Check Test Results & Report */}
+      <section data-ocid="director.secondcheck.section">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
           <span
             className="w-3 h-3 rounded-sm inline-block"
-            style={{ backgroundColor: "#0284c7" }}
+            style={{ backgroundColor: "#7c3aed" }}
           />
-          Programme Flow — Funnel View
+          2nd Check Test — Results &amp; Report
         </p>
         <Card
           className="border-0"
-          style={{ boxShadow: "0 2px 12px rgba(26,58,107,0.08)" }}
+          style={{
+            boxShadow: "0 2px 12px rgba(26,58,107,0.08)",
+            borderTop: "3px solid #7c3aed",
+          }}
         >
           <CardContent className="pt-5 pb-5">
-            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1">
-              {pipeline.map((stage, i) => {
-                const conversionNext =
-                  i < pipeline.length - 1
-                    ? Math.round((pipeline[i + 1].value / stage.value) * 100)
-                    : null;
+            {/* Summary KPI Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+              {secondCheckKpis.map((kpi) => {
+                const Icon = kpi.icon;
                 return (
                   <div
-                    key={stage.label}
-                    className="flex items-center flex-shrink-0"
+                    key={kpi.label}
+                    className="flex flex-col items-center justify-center rounded-xl py-3 px-2 text-center"
+                    style={{
+                      backgroundColor: kpi.bg,
+                      border: `1.5px solid ${kpi.color}30`,
+                    }}
                   >
                     <div
-                      className="flex flex-col items-center px-5 py-4 rounded-xl min-w-[90px] text-center"
-                      style={{
-                        backgroundColor: stage.bg,
-                        border: `1.5px solid ${stage.color}30`,
-                      }}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
+                      style={{ backgroundColor: `${kpi.color}18` }}
                     >
-                      <span
-                        className="text-2xl font-bold leading-none"
-                        style={{ color: stage.color }}
-                      >
-                        {stage.value}
-                      </span>
-                      <span
-                        className="text-xs font-semibold mt-1.5 mb-1"
-                        style={{ color: stage.color }}
-                      >
-                        {stage.label}
-                      </span>
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full font-medium"
-                        style={{
-                          backgroundColor: `${stage.color}20`,
-                          color: stage.color,
-                        }}
-                      >
-                        {Math.round((stage.value / 245) * 100)}%
-                      </span>
+                      <Icon size={15} style={{ color: kpi.color }} />
                     </div>
-                    {conversionNext !== null && (
-                      <div className="flex flex-col items-center mx-2 flex-shrink-0">
-                        <ArrowRight size={18} className="text-gray-300" />
-                        <span
-                          className="text-xs font-bold mt-0.5"
-                          style={{ color: "#059669" }}
-                        >
-                          {conversionNext}%
-                        </span>
-                      </div>
-                    )}
+                    <span
+                      className="text-2xl font-bold leading-none"
+                      style={{ color: kpi.color }}
+                    >
+                      {kpi.value}
+                    </span>
+                    <span className="text-xs font-semibold text-gray-500 mt-1 leading-tight">
+                      {kpi.label}
+                    </span>
                   </div>
                 );
               })}
+            </div>
+
+            {/* Cases Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr style={{ backgroundColor: "#f8fafc" }}>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 rounded-tl-lg">
+                      Case ID
+                    </th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500">
+                      Appliance / Brand
+                    </th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500">
+                      Lab 1
+                    </th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500">
+                      Lab 2
+                    </th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500">
+                      Lab 1 Result
+                    </th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500">
+                      Lab 2 Result
+                    </th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500">
+                      Date
+                    </th>
+                    <th className="text-left px-3 py-2.5 font-semibold text-gray-500 rounded-tr-lg">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {secondCheckCases.map((c, idx) => (
+                    <tr
+                      key={c.id}
+                      className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                      style={
+                        idx % 2 === 0 ? { backgroundColor: "#fafbfc" } : {}
+                      }
+                    >
+                      <td
+                        className="px-3 py-2.5 font-bold"
+                        style={{ color: "#1a3a6b" }}
+                      >
+                        {c.id}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <p className="font-semibold text-gray-800">
+                          {c.appliance}
+                        </p>
+                        <p className="text-gray-400">{c.brand}</p>
+                      </td>
+                      <td className="px-3 py-2.5 text-gray-600">{c.lab1}</td>
+                      <td className="px-3 py-2.5 text-gray-600">{c.lab2}</td>
+                      <td className="px-3 py-2.5">
+                        <span
+                          className="px-2 py-0.5 rounded-full font-semibold text-xs"
+                          style={{
+                            backgroundColor:
+                              c.lab1Result === "Pass"
+                                ? "#ecfdf5"
+                                : c.lab1Result === "Fail"
+                                  ? "#fef2f2"
+                                  : "#f3f4f6",
+                            color:
+                              c.lab1Result === "Pass"
+                                ? "#059669"
+                                : c.lab1Result === "Fail"
+                                  ? "#dc2626"
+                                  : "#9ca3af",
+                          }}
+                        >
+                          {c.lab1Result}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span
+                          className="px-2 py-0.5 rounded-full font-semibold text-xs"
+                          style={{
+                            backgroundColor:
+                              c.lab2Result === "Pass"
+                                ? "#ecfdf5"
+                                : c.lab2Result === "Fail"
+                                  ? "#fef2f2"
+                                  : "#f3f4f6",
+                            color:
+                              c.lab2Result === "Pass"
+                                ? "#059669"
+                                : c.lab2Result === "Fail"
+                                  ? "#dc2626"
+                                  : "#9ca3af",
+                          }}
+                        >
+                          {c.lab2Result}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-gray-500">{c.date}</td>
+                      <td className="px-3 py-2.5">
+                        <span
+                          className="px-2 py-0.5 rounded-full font-semibold text-xs"
+                          style={{
+                            backgroundColor: c.statusBg,
+                            color: c.statusColor,
+                          }}
+                        >
+                          {c.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex justify-end mt-3">
+              <button
+                type="button"
+                className="text-xs font-semibold flex items-center gap-1 hover:underline"
+                style={{ color: "#7c3aed" }}
+                onClick={() => onNavigate("testing")}
+              >
+                View All 2nd Check Cases <ArrowRight size={12} />
+              </button>
             </div>
           </CardContent>
         </Card>

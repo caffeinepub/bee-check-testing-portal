@@ -1,4 +1,5 @@
 // Shared module-level store for cases forwarded from BEE Official to Director
+// Only MISMATCH cases reach here: Lab verdict = Fail, BEE Official verdict = Pass
 
 export interface AttachedDocument {
   id: number;
@@ -19,6 +20,11 @@ export interface ForwardedCase {
   official: string;
   approvalDate: string;
   lab: string;
+  /** Lab's own verdict — always "Fail" for mismatch cases */
+  labVerdict: "Pass" | "Fail";
+  /** BEE Official's verdict — always "Pass" for mismatch cases */
+  officialVerdict: "Pass" | "Fail";
+  /** Legacy field kept for compatibility */
   testResult: "Pass" | "Fail";
   status: "Pending Review" | "Director Approved" | "Sent Back";
   remark: string;
@@ -40,13 +46,15 @@ let _cases: ForwardedCase[] = [
     official: "BEE Official A",
     approvalDate: "05-May-2024",
     lab: "NABL Lab Delhi",
-    testResult: "Pass",
+    labVerdict: "Fail",
+    officialVerdict: "Pass",
+    testResult: "Fail",
     status: "Pending Review",
     remark: "",
     forwardedBy: "BEE Official A",
     forwardedAt: "06-May-2024 10:30 AM",
     forwardingNote:
-      "Test report reviewed and verified. All energy efficiency parameters are within BEE norms. Compliance checklist attached. Forwarding for Director final approval.",
+      "Mismatch detected: Test Lab reported Fail, BEE Official verdict is Pass. Forwarding to Director for final arbitration.",
     attachedDocuments: [
       {
         id: 101,
@@ -105,13 +113,15 @@ let _cases: ForwardedCase[] = [
     official: "BEE Official B",
     approvalDate: "22-Apr-2024",
     lab: "BIS Testing Lab Mumbai",
-    testResult: "Pass",
+    labVerdict: "Fail",
+    officialVerdict: "Pass",
+    testResult: "Fail",
     status: "Pending Review",
     remark: "",
     forwardedBy: "BEE Official B",
     forwardedAt: "23-Apr-2024 02:15 PM",
     forwardingNote:
-      "Ceiling fan test report reviewed. BIS lab certification is valid. Star rating of 4 is confirmed as per energy consumption data. Forwarding for final Director sign-off.",
+      "Mismatch detected: Test Lab reported Fail, BEE Official verdict is Pass. Forwarding to Director for final arbitration.",
     attachedDocuments: [
       {
         id: 201,

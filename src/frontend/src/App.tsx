@@ -54,6 +54,8 @@ function AppContent() {
           return <DirectorTestingPage />;
         case "mapDashboard":
           return <IndiaMapDashboard />;
+        case "programmeoverview":
+          return <DirectorDashboard onNavigate={setActivePage} />;
         default:
           return <DirectorDashboard onNavigate={setActivePage} />;
       }
