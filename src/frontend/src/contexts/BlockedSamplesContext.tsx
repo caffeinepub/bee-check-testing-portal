@@ -24,10 +24,24 @@ export interface BlockedSample {
   labAssignment?: LabAssignment;
 }
 
+export interface SecondCheckLabRequest {
+  id: string;
+  caseId: string;
+  brandName: string;
+  modelNumber: string;
+  categoryName: string;
+  starRating: number;
+  blockedAt: string;
+  labAssignment?: { lab1: string; lab2: string; assignedAt: string };
+}
+
 interface BlockedSamplesContextType {
   blockedSamples: BlockedSample[];
   addBlockedSample: (sample: BlockedSample) => void;
   assignLab: (sampleId: number, labAssignment: LabAssignment) => void;
+  secondCheckLabRequests: SecondCheckLabRequest[];
+  addSecondCheckLabRequest: (req: SecondCheckLabRequest) => void;
+  assignSecondCheckLabs: (caseId: string, lab1: string, lab2: string) => void;
 }
 
 const BlockedSamplesContext = createContext<BlockedSamplesContextType | null>(
@@ -38,6 +52,9 @@ export function BlockedSamplesProvider({
   children,
 }: { children: React.ReactNode }) {
   const [blockedSamples, setBlockedSamples] = useState<BlockedSample[]>([]);
+  const [secondCheckLabRequests, setSecondCheckLabRequests] = useState<
+    SecondCheckLabRequest[]
+  >([]);
 
   const addBlockedSample = (sample: BlockedSample) => {
     setBlockedSamples((prev) => [sample, ...prev]);
@@ -49,9 +66,44 @@ export function BlockedSamplesProvider({
     );
   };
 
+  const addSecondCheckLabRequest = (req: SecondCheckLabRequest) => {
+    // Avoid duplicates
+    setSecondCheckLabRequests((prev) =>
+      prev.some((r) => r.caseId === req.caseId) ? prev : [req, ...prev],
+    );
+  };
+
+  const assignSecondCheckLabs = (
+    caseId: string,
+    lab1: string,
+    lab2: string,
+  ) => {
+    setSecondCheckLabRequests((prev) =>
+      prev.map((r) =>
+        r.caseId === caseId
+          ? {
+              ...r,
+              labAssignment: {
+                lab1,
+                lab2,
+                assignedAt: new Date().toISOString(),
+              },
+            }
+          : r,
+      ),
+    );
+  };
+
   return (
     <BlockedSamplesContext.Provider
-      value={{ blockedSamples, addBlockedSample, assignLab }}
+      value={{
+        blockedSamples,
+        addBlockedSample,
+        assignLab,
+        secondCheckLabRequests,
+        addSecondCheckLabRequest,
+        assignSecondCheckLabs,
+      }}
     >
       {children}
     </BlockedSamplesContext.Provider>

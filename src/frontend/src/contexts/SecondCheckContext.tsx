@@ -12,6 +12,12 @@ export type SecondCheckStatus =
   | "InvoiceRaised"
   | "NFT";
 
+export type SampleBlockStatus =
+  | "Awaiting Lab Assignment"
+  | "Lab Assigned"
+  | "In Transit"
+  | "Purchased";
+
 export type OfficialVerificationStatus =
   | "Pending"
   | "Published"
@@ -28,6 +34,7 @@ export interface FailedCase {
   brandName: string;
   modelNumber: string;
   category: string;
+  starRating: number;
   failDate: string;
   testLab: string;
   state: string;
@@ -40,20 +47,22 @@ export interface SecondCheckSample {
   brandName: string;
   modelNumber: string;
   category: string;
+  starRating: number;
   purchaser: string;
   lab1Name: string;
   lab2Name: string;
+  /** Per-sample block/purchase status shown in purchaser view */
+  sample1Status: SampleBlockStatus;
+  sample2Status: SampleBlockStatus;
+  /** Lab workflow status — only relevant after lab assignment */
   status: SecondCheckStatus;
   proposedDate?: string;
   proposedDateApproved?: boolean;
   proposedDateRejectedReason?: string;
   blockedOn: string;
   statusLog: StatusLogEntry[];
-  /** Result submitted by the Test Lab when Test Done */
   labResult?: "Pass" | "Fail";
-  /** BEE Official verdict on the 2nd check result */
   officialVerdict?: "Pass" | "Fail";
-  /** Whether BEE Official has reviewed the 2nd check report */
   officialVerificationStatus?: OfficialVerificationStatus;
 }
 
@@ -63,7 +72,8 @@ interface SecondCheckContextType {
   initiateSecondCheck: () => void;
   secondCheckRequests: FailedCase[];
   secondCheckSamples: SecondCheckSample[];
-  submitSecondCheckBlock: (caseId: string, lab1: string, lab2: string) => void;
+  submitSecondCheckBlock: (caseId: string) => void;
+  assignSecondCheckLab: (caseId: string, lab1: string, lab2: string) => void;
   proposeTestDate: (sampleId: string, date: string, labName: string) => void;
   approveTestDate: (sampleId: string) => void;
   rejectTestDate: (sampleId: string, reason: string) => void;
@@ -91,6 +101,7 @@ const INITIAL_FAILED_CASES: FailedCase[] = [
     brandName: "Voltas",
     modelNumber: "SAC-1.5T-3S",
     category: "Air Conditioner",
+    starRating: 3,
     failDate: "2025-11-15",
     testLab: "NABL Lab Delhi",
     state: "Delhi",
@@ -101,6 +112,7 @@ const INITIAL_FAILED_CASES: FailedCase[] = [
     brandName: "Havells",
     modelNumber: "FAN-CRPD-50W",
     category: "Ceiling Fan",
+    starRating: 4,
     failDate: "2025-11-18",
     testLab: "ERTL Mumbai",
     state: "Maharashtra",
@@ -111,6 +123,7 @@ const INITIAL_FAILED_CASES: FailedCase[] = [
     brandName: "BEW",
     modelNumber: "REF-FROST-250L",
     category: "Refrigerator",
+    starRating: 3,
     failDate: "2025-11-20",
     testLab: "CPRI Bangalore",
     state: "Karnataka",
@@ -121,6 +134,7 @@ const INITIAL_FAILED_CASES: FailedCase[] = [
     brandName: "Orient",
     modelNumber: "AC-ECONEXT-2T",
     category: "Air Conditioner",
+    starRating: 5,
     failDate: "2025-11-22",
     testLab: "NABL Lab Hyderabad",
     state: "Telangana",
@@ -147,53 +161,55 @@ export function SecondCheckProvider({
     setFailedCases((prev) => prev.map((c) => ({ ...c, dispatched: true })));
   };
 
-  const submitSecondCheckBlock = (
-    caseId: string,
-    lab1: string,
-    lab2: string,
-  ) => {
+  /** Purchaser blocks a case — creates one record with both samples awaiting lab assignment */
+  const submitSecondCheckBlock = (caseId: string) => {
     const fc = failedCases.find((c) => c.id === caseId);
     if (!fc) return;
+    // Don't allow double-blocking
+    if (secondCheckSamples.some((s) => s.caseId === caseId)) return;
     const now = new Date().toISOString().split("T")[0];
-    const sample1: SecondCheckSample = {
-      id: `SC-${caseId}-L1-${Date.now()}`,
+    const record: SecondCheckSample = {
+      id: `SC-${caseId}-${Date.now()}`,
       caseId,
       brandName: fc.brandName,
       modelNumber: fc.modelNumber,
       category: fc.category,
+      starRating: fc.starRating,
       purchaser: "SDA Purchaser",
-      lab1Name: lab1,
-      lab2Name: lab2,
+      lab1Name: "",
+      lab2Name: "",
+      sample1Status: "Awaiting Lab Assignment",
+      sample2Status: "Awaiting Lab Assignment",
       status: "InTransit",
       blockedOn: now,
-      statusLog: [
-        {
-          status: "InTransit",
-          date: now,
-          remarks: "Sample dispatched for 2nd check",
-        },
-      ],
+      statusLog: [],
     };
-    const sample2: SecondCheckSample = {
-      id: `SC-${caseId}-L2-${Date.now() + 1}`,
-      caseId,
-      brandName: fc.brandName,
-      modelNumber: fc.modelNumber,
-      category: fc.category,
-      purchaser: "SDA Purchaser",
-      lab1Name: lab2,
-      lab2Name: lab1,
-      status: "InTransit",
-      blockedOn: now,
-      statusLog: [
-        {
-          status: "InTransit",
-          date: now,
-          remarks: "Sample dispatched for 2nd check",
-        },
-      ],
-    };
-    setSecondCheckSamples((prev) => [...prev, sample1, sample2]);
+    setSecondCheckSamples((prev) => [...prev, record]);
+  };
+
+  /** Lab Coordinator assigns labs to a blocked 2nd check case */
+  const assignSecondCheckLab = (caseId: string, lab1: string, lab2: string) => {
+    setSecondCheckSamples((prev) =>
+      prev.map((s) =>
+        s.caseId === caseId
+          ? {
+              ...s,
+              lab1Name: lab1,
+              lab2Name: lab2,
+              sample1Status: "Lab Assigned" as SampleBlockStatus,
+              sample2Status: "Lab Assigned" as SampleBlockStatus,
+              statusLog: [
+                ...s.statusLog,
+                {
+                  status: "InTransit" as SecondCheckStatus,
+                  date: new Date().toISOString().split("T")[0],
+                  remarks: `Labs assigned: ${lab1} (Sample 1), ${lab2} (Sample 2)`,
+                },
+              ],
+            }
+          : s,
+      ),
+    );
   };
 
   const proposeTestDate = (
@@ -293,10 +309,6 @@ export function SecondCheckProvider({
     );
   };
 
-  /**
-   * Called by Lab user when they confirm the Test Done result (Pass or Fail).
-   * Moves status to ReportUploaded and stores labResult.
-   */
   const recordTestResult = (
     sampleId: string,
     result: "Pass" | "Fail",
@@ -326,10 +338,6 @@ export function SecondCheckProvider({
     );
   };
 
-  /**
-   * BEE Official submits their verdict on a 2nd check report.
-   * Returns 'published' (Lab=Pass+Official=Pass) or 'mismatch' (Lab=Fail+Official=Pass).
-   */
   const submitOfficialVerdict = (
     sampleId: string,
     verdict: "Pass" | "Fail",
@@ -345,11 +353,9 @@ export function SecondCheckProvider({
       outcomeStatus = "Published";
       result = "published";
     } else if (labResult === "Fail" && verdict === "Pass") {
-      // Mismatch — forward to Director
       outcomeStatus = "MismatchForwarded";
       result = "mismatch";
     } else {
-      // Lab=Pass+Official=Fail or Lab=Fail+Official=Fail → Published as Failed
       outcomeStatus = "Published";
       result = "published";
     }
@@ -391,6 +397,7 @@ export function SecondCheckProvider({
         secondCheckRequests,
         secondCheckSamples,
         submitSecondCheckBlock,
+        assignSecondCheckLab,
         proposeTestDate,
         approveTestDate,
         rejectTestDate,

@@ -12,11 +12,14 @@ interface Props {
 }
 
 export default function LabCoordinatorDashboard({ onNavigate }: Props) {
-  const { blockedSamples } = useBlockedSamples();
+  const { blockedSamples, secondCheckLabRequests } = useBlockedSamples();
 
   const pending = blockedSamples.filter((s) => !s.labAssignment);
   const assigned = blockedSamples.filter((s) => !!s.labAssignment);
   const recent = blockedSamples.slice(0, 5);
+  const pendingSecondCheck = secondCheckLabRequests.filter(
+    (r) => !r.labAssignment,
+  );
 
   const kpis = [
     {
@@ -44,12 +47,12 @@ export default function LabCoordinatorDashboard({ onNavigate }: Props) {
       icon: <CheckCircle2 size={20} style={{ color: "#065f46" }} />,
     },
     {
-      label: "Total Labs Available",
-      value: 5,
-      color: "#0e7490",
-      bg: "#ecfeff",
-      border: "#a5f3fc",
-      icon: <ClipboardList size={20} style={{ color: "#0e7490" }} />,
+      label: "2nd Check Pending",
+      value: pendingSecondCheck.length,
+      color: "#7c3aed",
+      bg: "#f5f3ff",
+      border: "#ddd6fe",
+      icon: <ClipboardList size={20} style={{ color: "#7c3aed" }} />,
     },
   ];
 
@@ -64,10 +67,10 @@ export default function LabCoordinatorDashboard({ onNavigate }: Props) {
         </p>
       </div>
 
-      {/* Pending notification banner */}
+      {/* Regular pending notification banner */}
       {pending.length > 0 && (
         <div
-          className="mb-5 p-4 rounded-xl flex items-center justify-between gap-4"
+          className="mb-4 p-4 rounded-xl flex items-center justify-between gap-4"
           style={{ backgroundColor: "#fffbeb", border: "1px solid #fde68a" }}
           data-ocid="labcoord.pending.panel"
         >
@@ -77,8 +80,8 @@ export default function LabCoordinatorDashboard({ onNavigate }: Props) {
               style={{ color: "#d97706", flexShrink: 0 }}
             />
             <p className="text-sm font-semibold" style={{ color: "#92400e" }}>
-              You have <strong>{pending.length}</strong> sample(s) pending lab
-              assignment. Please assign test lab information.
+              You have <strong>{pending.length}</strong> regular sample(s)
+              pending lab assignment.
             </p>
           </div>
           <Button
@@ -88,6 +91,34 @@ export default function LabCoordinatorDashboard({ onNavigate }: Props) {
             style={{ backgroundColor: "#d97706", color: "white" }}
           >
             Assign Labs Now
+          </Button>
+        </div>
+      )}
+
+      {/* 2nd Check pending notification banner */}
+      {pendingSecondCheck.length > 0 && (
+        <div
+          className="mb-5 p-4 rounded-xl flex items-center justify-between gap-4"
+          style={{ backgroundColor: "#f5f3ff", border: "1px solid #ddd6fe" }}
+          data-ocid="labcoord.secondcheck_pending.panel"
+        >
+          <div className="flex items-center gap-3">
+            <FlaskConical
+              size={22}
+              style={{ color: "#7c3aed", flexShrink: 0 }}
+            />
+            <p className="text-sm font-semibold" style={{ color: "#4c1d95" }}>
+              <strong>{pendingSecondCheck.length}</strong> 2nd Check Test
+              sample(s) awaiting lab assignment from purchasers.
+            </p>
+          </div>
+          <Button
+            data-ocid="labcoord.assign_secondcheck.button"
+            size="sm"
+            onClick={() => onNavigate("assignlab")}
+            style={{ backgroundColor: "#7c3aed", color: "white" }}
+          >
+            Assign 2nd Check Labs
           </Button>
         </div>
       )}
