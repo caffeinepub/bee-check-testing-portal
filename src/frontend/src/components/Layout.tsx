@@ -11,7 +11,6 @@ import {
   FileCheck,
   FileText,
   FlaskConical,
-  Home,
   LayoutDashboard,
   List,
   Lock,
@@ -43,11 +42,6 @@ const navItems: Record<
       icon: <LayoutDashboard size={18} />,
       label: "Dashboard",
       page: "dashboard",
-    },
-    {
-      icon: <Home size={18} />,
-      label: "Programme Overview",
-      page: "programmeoverview",
     },
     {
       icon: <Database size={18} />,

@@ -241,39 +241,6 @@ const recentActivity = [
   },
 ];
 
-// 2nd Check Test data
-const secondCheckKpis = [
-  {
-    label: "Total Cases",
-    value: 7,
-    color: "#1a3a6b",
-    bg: "#eff6ff",
-    icon: FileText,
-  },
-  {
-    label: "Pass",
-    value: 3,
-    color: "#059669",
-    bg: "#ecfdf5",
-    icon: CheckCircle,
-  },
-  { label: "Fail", value: 1, color: "#dc2626", bg: "#fef2f2", icon: XCircle },
-  {
-    label: "In Progress",
-    value: 2,
-    color: "#ea580c",
-    bg: "#fff7ed",
-    icon: Clock,
-  },
-  {
-    label: "Awaiting CO Approval",
-    value: 1,
-    color: "#7c3aed",
-    bg: "#f5f3ff",
-    icon: AlertTriangle,
-  },
-];
-
 const secondCheckCases = [
   {
     id: "2CT-001",
@@ -537,39 +504,6 @@ export default function DirectorDashboard({ onNavigate }: Props) {
           }}
         >
           <CardContent className="pt-5 pb-5">
-            {/* Summary KPI Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
-              {secondCheckKpis.map((kpi) => {
-                const Icon = kpi.icon;
-                return (
-                  <div
-                    key={kpi.label}
-                    className="flex flex-col items-center justify-center rounded-xl py-3 px-2 text-center"
-                    style={{
-                      backgroundColor: kpi.bg,
-                      border: `1.5px solid ${kpi.color}30`,
-                    }}
-                  >
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
-                      style={{ backgroundColor: `${kpi.color}18` }}
-                    >
-                      <Icon size={15} style={{ color: kpi.color }} />
-                    </div>
-                    <span
-                      className="text-2xl font-bold leading-none"
-                      style={{ color: kpi.color }}
-                    >
-                      {kpi.value}
-                    </span>
-                    <span className="text-xs font-semibold text-gray-500 mt-1 leading-tight">
-                      {kpi.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
             {/* Cases Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
