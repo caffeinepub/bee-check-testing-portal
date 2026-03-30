@@ -24,8 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2, FlaskConical, Lock, ShoppingCart } from "lucide-react";
+import type React from "react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useBlockedSamples } from "../../contexts/BlockedSamplesContext";
@@ -84,23 +84,24 @@ const emptyForm = (): PurchaseFormState => ({
 function StarRating({ rating }: { rating: number }) {
   return (
     <span className="text-amber-500 text-sm tracking-tight">
-      {"★".repeat(rating)}
-      <span className="text-gray-300">{"★".repeat(5 - rating)}</span>
+      {"\u2605".repeat(rating)}
+      <span className="text-gray-300">{"\u2605".repeat(5 - rating)}</span>
     </span>
   );
 }
 
-function SampleStatusBadge({ status }: { status: string }) {
+function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     "Awaiting Lab Assignment":
       "bg-yellow-100 text-yellow-800 border-yellow-200",
     "Lab Assigned": "bg-green-100 text-green-800 border-green-200",
     "In Transit": "bg-blue-100 text-blue-800 border-blue-200",
     Purchased: "bg-purple-100 text-purple-800 border-purple-200",
+    "\u2014": "bg-gray-50 text-gray-400 border-gray-100",
   };
   return (
     <Badge
-      className={`text-xs border ${
+      className={`text-xs border whitespace-nowrap ${
         styles[status] ?? "bg-gray-100 text-gray-700 border-gray-200"
       }`}
     >
@@ -113,14 +114,16 @@ export default function SecondCheckTestPage() {
   const {
     secondCheckRequests,
     secondCheckInitiated,
-    submitSecondCheckBlock,
+    submitSingleSampleBlock,
     secondCheckSamples,
   } = useSecondCheck();
   const { addSecondCheckLabRequest } = useBlockedSamples();
 
+  // Block dialog — per sample
   const [blockDialog, setBlockDialog] = useState<{
     open: boolean;
     caseId: string;
+    sampleNumber: 1 | 2;
     brand: string;
     model: string;
     category: string;
@@ -128,6 +131,7 @@ export default function SecondCheckTestPage() {
   }>({
     open: false,
     caseId: "",
+    sampleNumber: 1,
     brand: "",
     model: "",
     category: "",
@@ -137,21 +141,31 @@ export default function SecondCheckTestPage() {
   const [purchaseDialog, setPurchaseDialog] = useState<{
     open: boolean;
     sampleId: string;
+    sampleNum: 1 | 2;
     brand: string;
     model: string;
     category: string;
     starRating: number;
+    labName: string;
   }>({
     open: false,
     sampleId: "",
+    sampleNum: 1,
     brand: "",
     model: "",
     category: "",
     starRating: 0,
+    labName: "",
   });
 
   const [form, setForm] = useState<PurchaseFormState>(emptyForm());
   const [invoiceFileName, setInvoiceFileName] = useState("");
+  const [purchasedSamples, setPurchasedSamples] = useState<
+    Record<
+      string,
+      { s1: boolean; s2: boolean; s1Date?: string; s2Date?: string }
+    >
+  >({});
 
   const isOnline = form.purchaseMode === "Online";
 
@@ -159,7 +173,6 @@ export default function SecondCheckTestPage() {
     (s) => s.id === purchaseDialog.sampleId,
   );
 
-  // Auto-fill form when dialog opens
   useEffect(() => {
     if (purchaseDialog.open && activeSample) {
       setForm((f) => ({
@@ -167,12 +180,11 @@ export default function SecondCheckTestPage() {
         applianceName: activeSample.category,
         applianceBrand: activeSample.brandName,
         applianceModel: activeSample.modelNumber,
-        productStarRating: "★".repeat(activeSample.starRating),
+        productStarRating: "\u2605".repeat(activeSample.starRating),
       }));
     }
   }, [purchaseDialog.open, activeSample]);
 
-  // Auto-calculate total amount
   useEffect(() => {
     const invoice = Number.parseFloat(form.invoiceAmount) || 0;
     if (isOnline) {
@@ -194,7 +206,6 @@ export default function SecondCheckTestPage() {
     isOnline,
   ]);
 
-  // Reset offline-only fields when switching to Online
   useEffect(() => {
     if (isOnline) {
       setForm((f) => ({
@@ -209,14 +220,14 @@ export default function SecondCheckTestPage() {
   const setField = (field: keyof PurchaseFormState, value: string) =>
     setForm((f) => ({ ...f, [field]: value }));
 
-  const blockedCaseIds = new Set(secondCheckSamples.map((s) => s.caseId));
-
   const handleBlock = () => {
-    const { caseId, brand, model, category, starRating } = blockDialog;
-    submitSecondCheckBlock(caseId);
+    const { caseId, sampleNumber, brand, model, category, starRating } =
+      blockDialog;
+    submitSingleSampleBlock(caseId, sampleNumber);
     addSecondCheckLabRequest({
-      id: `SCLR-${caseId}-${Date.now()}`,
+      id: `SCLR-${caseId}-S${sampleNumber}-${Date.now()}`,
       caseId,
+      sampleNumber,
       brandName: brand,
       modelNumber: model,
       categoryName: category,
@@ -224,11 +235,12 @@ export default function SecondCheckTestPage() {
       blockedAt: new Date().toISOString(),
     });
     toast.success(
-      "2 samples blocked. Lab assignment request sent to Lab Coordinator.",
+      `Sample ${sampleNumber} blocked. Lab assignment request sent to Lab Coordinator.`,
     );
     setBlockDialog({
       open: false,
       caseId: "",
+      sampleNumber: 1,
       brand: "",
       model: "",
       category: "",
@@ -240,10 +252,12 @@ export default function SecondCheckTestPage() {
     setPurchaseDialog({
       open: false,
       sampleId: "",
+      sampleNum: 1,
       brand: "",
       model: "",
       category: "",
       starRating: 0,
+      labName: "",
     });
     setForm(emptyForm());
     setInvoiceFileName("");
@@ -261,8 +275,24 @@ export default function SecondCheckTestPage() {
       toast.error("Please fill all required purchase details");
       return;
     }
+    const sId = purchaseDialog.sampleId;
+    const sNum = purchaseDialog.sampleNum;
+    const today = new Date().toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    setPurchasedSamples((prev) => ({
+      ...prev,
+      [sId]: {
+        s1: sNum === 1 ? true : (prev[sId]?.s1 ?? false),
+        s2: sNum === 2 ? true : (prev[sId]?.s2 ?? false),
+        s1Date: sNum === 1 ? today : prev[sId]?.s1Date,
+        s2Date: sNum === 2 ? today : prev[sId]?.s2Date,
+      },
+    }));
     toast.success(
-      `Purchase confirmed for ${purchaseDialog.brand} — ${purchaseDialog.model}. Both samples submitted to their assigned labs.`,
+      `Sample ${sNum} purchase confirmed for ${purchaseDialog.brand} \u2014 ${purchaseDialog.model}.`,
     );
     closePurchaseDialog();
   };
@@ -282,328 +312,367 @@ export default function SecondCheckTestPage() {
           2nd Check Test
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Block products for secondary compliance testing and track their
-          progress
+          Block products for secondary compliance testing. Each sample is
+          blocked and purchased independently.
         </p>
       </div>
 
-      <Tabs defaultValue="pending">
-        <TabsList className="mb-4">
-          <TabsTrigger value="pending" data-ocid="second_check.pending_tab">
-            Pending Requests
-            {secondCheckRequests.filter((r) => !blockedCaseIds.has(r.id))
-              .length > 0 && (
-              <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
-                {
-                  secondCheckRequests.filter((r) => !blockedCaseIds.has(r.id))
-                    .length
-                }
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger
-            value="mysamples"
-            data-ocid="second_check.my_samples_tab"
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-3 border-b border-gray-100">
+          <CardTitle
+            className="text-base font-semibold"
+            style={{ color: "#1a3a6b" }}
           >
-            My 2nd Check Samples
-            {secondCheckSamples.length > 0 && (
-              <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5">
-                {secondCheckSamples.length}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
+            2nd Check Test Cases
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {!secondCheckInitiated ? (
+            <div
+              className="text-center py-16 text-gray-400"
+              data-ocid="secondcheck.empty_state"
+            >
+              <FlaskConical size={40} className="mx-auto mb-3 opacity-30" />
+              <p className="font-medium">No 2nd check requests yet</p>
+              <p className="text-sm mt-1">
+                The Compliance Officer has not yet initiated 2nd Check Testing.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  {/* Top header row */}
+                  <TableRow style={{ backgroundColor: "#1a3a6b" }}>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-white text-xs font-semibold border-r border-blue-700 align-middle w-10"
+                    >
+                      #
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-white text-xs font-semibold border-r border-blue-700 align-middle"
+                    >
+                      Category
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-white text-xs font-semibold border-r border-blue-700 align-middle"
+                    >
+                      Brand
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-white text-xs font-semibold border-r border-blue-700 align-middle"
+                    >
+                      Model
+                    </TableHead>
+                    <TableHead
+                      rowSpan={2}
+                      className="text-white text-xs font-semibold border-r border-blue-700 align-middle"
+                    >
+                      Star Rating
+                    </TableHead>
+                    <TableHead
+                      colSpan={5}
+                      className="text-center text-white text-xs font-semibold border-r border-blue-700 py-2"
+                    >
+                      Sample 1
+                    </TableHead>
+                    <TableHead
+                      colSpan={5}
+                      className="text-center text-white text-xs font-semibold py-2"
+                    >
+                      Sample 2
+                    </TableHead>
+                  </TableRow>
+                  {/* Sub-header row */}
+                  <TableRow style={{ backgroundColor: "#243f6e" }}>
+                    {/* Sample 1 sub-cols */}
+                    <TableHead className="text-blue-100 text-xs font-semibold py-2 px-3 border-r border-blue-600">
+                      Block
+                    </TableHead>
+                    <TableHead className="text-blue-100 text-xs font-semibold py-2 px-3 border-r border-blue-600">
+                      L \u2014 Lab Assign
+                    </TableHead>
+                    <TableHead className="text-blue-100 text-xs font-semibold py-2 px-3 border-r border-blue-600">
+                      D \u2014 Date
+                    </TableHead>
+                    <TableHead className="text-blue-100 text-xs font-semibold py-2 px-3 border-r border-blue-600">
+                      S \u2014 Status
+                    </TableHead>
+                    <TableHead className="text-blue-100 text-xs font-semibold py-2 px-3 border-r border-blue-700">
+                      A \u2014 Action
+                    </TableHead>
+                    {/* Sample 2 sub-cols */}
+                    <TableHead className="text-blue-100 text-xs font-semibold py-2 px-3 border-r border-blue-600">
+                      Block
+                    </TableHead>
+                    <TableHead className="text-blue-100 text-xs font-semibold py-2 px-3 border-r border-blue-600">
+                      L \u2014 Lab Assign
+                    </TableHead>
+                    <TableHead className="text-blue-100 text-xs font-semibold py-2 px-3 border-r border-blue-600">
+                      D \u2014 Date
+                    </TableHead>
+                    <TableHead className="text-blue-100 text-xs font-semibold py-2 px-3 border-r border-blue-600">
+                      S \u2014 Status
+                    </TableHead>
+                    <TableHead className="text-blue-100 text-xs font-semibold py-2 px-3">
+                      A \u2014 Action
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {secondCheckRequests.map((req, idx) => {
+                    const sample = secondCheckSamples.find(
+                      (s) => s.caseId === req.id,
+                    );
+                    const ps = sample
+                      ? (purchasedSamples[sample.id] ?? {
+                          s1: false,
+                          s2: false,
+                        })
+                      : { s1: false, s2: false };
 
-        {/* ── Pending Requests ── */}
-        <TabsContent value="pending">
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-3 border-b border-gray-100">
-              <CardTitle
-                className="text-base font-semibold"
-                style={{ color: "#1a3a6b" }}
-              >
-                Cases Dispatched by Compliance Officer
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {!secondCheckInitiated ? (
-                <div
-                  className="text-center py-16 text-gray-400"
-                  data-ocid="second_check.pending.empty_state"
-                >
-                  <FlaskConical size={40} className="mx-auto mb-3 opacity-30" />
-                  <p className="font-medium">No 2nd check requests yet</p>
-                  <p className="text-sm mt-1">
-                    The Compliance Officer has not yet initiated 2nd Check
-                    Testing.
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow style={{ backgroundColor: "#f8fafc" }}>
-                        <TableHead className="w-10 text-xs font-semibold text-gray-600">
-                          #
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Category
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Brand
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Model
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Star Rating
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Sample 1 Status
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Sample 2 Status
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Action
-                        </TableHead>
+                    const s1Blocked = !!sample?.sample1Blocked;
+                    const s2Blocked = !!sample?.sample2Blocked;
+                    const lab1Assigned = !!sample?.lab1Name;
+                    const lab2Assigned = !!sample?.lab2Name;
+
+                    const s1Status = !s1Blocked
+                      ? "\u2014"
+                      : lab1Assigned
+                        ? ps.s1
+                          ? "Purchased"
+                          : "Lab Assigned"
+                        : "Awaiting Lab Assignment";
+                    const s2Status = !s2Blocked
+                      ? "\u2014"
+                      : lab2Assigned
+                        ? ps.s2
+                          ? "Purchased"
+                          : "Lab Assigned"
+                        : "Awaiting Lab Assignment";
+
+                    return (
+                      <TableRow
+                        key={req.id}
+                        className="hover:bg-blue-50 border-b border-gray-100"
+                        data-ocid={`secondcheck.item.${idx + 1}`}
+                      >
+                        <TableCell className="text-gray-500 text-xs border-r border-gray-100">
+                          {idx + 1}
+                        </TableCell>
+                        <TableCell className="text-xs font-medium border-r border-gray-100">
+                          {req.category}
+                        </TableCell>
+                        <TableCell className="text-xs border-r border-gray-100">
+                          {req.brandName}
+                        </TableCell>
+                        <TableCell className="text-xs font-mono border-r border-gray-100">
+                          {req.modelNumber}
+                        </TableCell>
+                        <TableCell className="border-r border-gray-100">
+                          <StarRating rating={req.starRating} />
+                        </TableCell>
+
+                        {/* \u2500\u2500 Sample 1: Block \u2500\u2500 */}
+                        <TableCell className="border-r border-gray-100 px-3">
+                          {s1Blocked ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-200 border text-xs">
+                              <CheckCircle2 size={11} className="mr-1" />
+                              Blocked
+                            </Badge>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="text-xs h-7 whitespace-nowrap"
+                              style={{ backgroundColor: "#1a3a6b" }}
+                              data-ocid={`secondcheck.s1.block.button.${idx + 1}`}
+                              onClick={() =>
+                                setBlockDialog({
+                                  open: true,
+                                  caseId: req.id,
+                                  sampleNumber: 1,
+                                  brand: req.brandName,
+                                  model: req.modelNumber,
+                                  category: req.category,
+                                  starRating: req.starRating,
+                                })
+                              }
+                            >
+                              <Lock size={12} className="mr-1" />
+                              Block
+                            </Button>
+                          )}
+                        </TableCell>
+                        {/* Sample 1: L */}
+                        <TableCell className="text-xs border-r border-gray-100 px-3">
+                          {sample?.lab1Name ? (
+                            <span className="text-green-700 font-medium">
+                              {sample.lab1Name}
+                            </span>
+                          ) : s1Blocked ? (
+                            <span className="text-amber-600 text-xs">
+                              Pending
+                            </span>
+                          ) : (
+                            <span className="text-gray-300">\u2014</span>
+                          )}
+                        </TableCell>
+                        {/* Sample 1: D */}
+                        <TableCell className="text-xs border-r border-gray-100 px-3 whitespace-nowrap">
+                          {ps.s1Date ? (
+                            <span className="text-gray-700">{ps.s1Date}</span>
+                          ) : (
+                            <span className="text-gray-300">\u2014</span>
+                          )}
+                        </TableCell>
+                        {/* Sample 1: S */}
+                        <TableCell className="border-r border-gray-100 px-3">
+                          <StatusBadge status={s1Status} />
+                        </TableCell>
+                        {/* Sample 1: A */}
+                        <TableCell className="border-r border-gray-200 px-3">
+                          {s1Blocked && lab1Assigned && !ps.s1 ? (
+                            <Button
+                              size="sm"
+                              className="text-xs h-7 bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
+                              data-ocid={`secondcheck.s1.purchase.button.${idx + 1}`}
+                              onClick={() => {
+                                setPurchaseDialog({
+                                  open: true,
+                                  sampleId: sample!.id,
+                                  sampleNum: 1,
+                                  brand: req.brandName,
+                                  model: req.modelNumber,
+                                  category: req.category,
+                                  starRating: req.starRating,
+                                  labName: sample?.lab1Name ?? "",
+                                });
+                                setForm(emptyForm());
+                                setInvoiceFileName("");
+                              }}
+                            >
+                              <ShoppingCart size={11} className="mr-1" />
+                              Purchase
+                            </Button>
+                          ) : ps.s1 ? (
+                            <Badge className="bg-purple-100 text-purple-700 border border-purple-200 text-xs">
+                              <CheckCircle2 size={11} className="mr-1" />
+                              Done
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-300 text-xs">
+                              \u2014
+                            </span>
+                          )}
+                        </TableCell>
+
+                        {/* \u2500\u2500 Sample 2: Block \u2500\u2500 */}
+                        <TableCell className="border-r border-gray-100 px-3">
+                          {s2Blocked ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-200 border text-xs">
+                              <CheckCircle2 size={11} className="mr-1" />
+                              Blocked
+                            </Badge>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="text-xs h-7 whitespace-nowrap"
+                              style={{ backgroundColor: "#1a3a6b" }}
+                              data-ocid={`secondcheck.s2.block.button.${idx + 1}`}
+                              onClick={() =>
+                                setBlockDialog({
+                                  open: true,
+                                  caseId: req.id,
+                                  sampleNumber: 2,
+                                  brand: req.brandName,
+                                  model: req.modelNumber,
+                                  category: req.category,
+                                  starRating: req.starRating,
+                                })
+                              }
+                            >
+                              <Lock size={12} className="mr-1" />
+                              Block
+                            </Button>
+                          )}
+                        </TableCell>
+                        {/* Sample 2: L */}
+                        <TableCell className="text-xs border-r border-gray-100 px-3">
+                          {sample?.lab2Name ? (
+                            <span className="text-green-700 font-medium">
+                              {sample.lab2Name}
+                            </span>
+                          ) : s2Blocked ? (
+                            <span className="text-amber-600 text-xs">
+                              Pending
+                            </span>
+                          ) : (
+                            <span className="text-gray-300">\u2014</span>
+                          )}
+                        </TableCell>
+                        {/* Sample 2: D */}
+                        <TableCell className="text-xs border-r border-gray-100 px-3 whitespace-nowrap">
+                          {ps.s2Date ? (
+                            <span className="text-gray-700">{ps.s2Date}</span>
+                          ) : (
+                            <span className="text-gray-300">\u2014</span>
+                          )}
+                        </TableCell>
+                        {/* Sample 2: S */}
+                        <TableCell className="border-r border-gray-100 px-3">
+                          <StatusBadge status={s2Status} />
+                        </TableCell>
+                        {/* Sample 2: A */}
+                        <TableCell className="px-3">
+                          {s2Blocked && lab2Assigned && !ps.s2 ? (
+                            <Button
+                              size="sm"
+                              className="text-xs h-7 bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
+                              data-ocid={`secondcheck.s2.purchase.button.${idx + 1}`}
+                              onClick={() => {
+                                setPurchaseDialog({
+                                  open: true,
+                                  sampleId: sample!.id,
+                                  sampleNum: 2,
+                                  brand: req.brandName,
+                                  model: req.modelNumber,
+                                  category: req.category,
+                                  starRating: req.starRating,
+                                  labName: sample?.lab2Name ?? "",
+                                });
+                                setForm(emptyForm());
+                                setInvoiceFileName("");
+                              }}
+                            >
+                              <ShoppingCart size={11} className="mr-1" />
+                              Purchase
+                            </Button>
+                          ) : ps.s2 ? (
+                            <Badge className="bg-purple-100 text-purple-700 border border-purple-200 text-xs">
+                              <CheckCircle2 size={11} className="mr-1" />
+                              Done
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-300 text-xs">
+                              \u2014
+                            </span>
+                          )}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {secondCheckRequests.map((req, idx) => {
-                        const blocked = blockedCaseIds.has(req.id);
-                        const sample = secondCheckSamples.find(
-                          (s) => s.caseId === req.id,
-                        );
-                        return (
-                          <TableRow
-                            key={req.id}
-                            className="hover:bg-blue-50"
-                            data-ocid={`second_check.pending.item.${idx + 1}`}
-                          >
-                            <TableCell className="text-gray-500 text-xs">
-                              {idx + 1}
-                            </TableCell>
-                            <TableCell className="text-xs font-medium">
-                              {req.category}
-                            </TableCell>
-                            <TableCell className="text-xs">
-                              {req.brandName}
-                            </TableCell>
-                            <TableCell className="text-xs font-mono">
-                              {req.modelNumber}
-                            </TableCell>
-                            <TableCell>
-                              <StarRating rating={req.starRating} />
-                            </TableCell>
-                            <TableCell>
-                              {blocked && sample ? (
-                                <SampleStatusBadge
-                                  status={sample.sample1Status}
-                                />
-                              ) : (
-                                <span className="text-gray-400 text-xs">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {blocked && sample ? (
-                                <SampleStatusBadge
-                                  status={sample.sample2Status}
-                                />
-                              ) : (
-                                <span className="text-gray-400 text-xs">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {blocked ? (
-                                <Badge className="bg-green-100 text-green-700 border-green-200 border text-xs">
-                                  <CheckCircle2 size={11} className="mr-1" />
-                                  Blocked ✓
-                                </Badge>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  data-ocid={`second_check.block_button.${idx + 1}`}
-                                  className="text-xs h-7"
-                                  style={{ backgroundColor: "#1a3a6b" }}
-                                  onClick={() =>
-                                    setBlockDialog({
-                                      open: true,
-                                      caseId: req.id,
-                                      brand: req.brandName,
-                                      model: req.modelNumber,
-                                      category: req.category,
-                                      starRating: req.starRating,
-                                    })
-                                  }
-                                >
-                                  <Lock size={12} className="mr-1" />
-                                  Block
-                                </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* ── My 2nd Check Samples ── */}
-        <TabsContent value="mysamples">
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-3 border-b border-gray-100">
-              <CardTitle
-                className="text-base font-semibold"
-                style={{ color: "#1a3a6b" }}
-              >
-                My 2nd Check Samples
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {secondCheckSamples.length === 0 ? (
-                <div
-                  className="text-center py-16 text-gray-400"
-                  data-ocid="second_check.my_samples.empty_state"
-                >
-                  <FlaskConical size={40} className="mx-auto mb-3 opacity-30" />
-                  <p className="font-medium">No samples blocked yet</p>
-                  <p className="text-sm mt-1">
-                    Block a product from Pending Requests to start.
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow style={{ backgroundColor: "#f8fafc" }}>
-                        <TableHead className="w-10 text-xs font-semibold text-gray-600">
-                          #
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Category
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Brand
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Model
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Star Rating
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Sample 1 Status
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Sample 2 Status
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Lab 1
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Lab 2
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-gray-600">
-                          Action
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {secondCheckSamples.map((s, idx) => {
-                        const canPurchase =
-                          s.sample1Status === "Lab Assigned" &&
-                          s.sample2Status === "Lab Assigned";
-                        return (
-                          <TableRow
-                            key={s.id}
-                            className="hover:bg-blue-50"
-                            data-ocid={`second_check.my_samples.item.${idx + 1}`}
-                          >
-                            <TableCell className="text-gray-500 text-xs">
-                              {idx + 1}
-                            </TableCell>
-                            <TableCell className="text-xs font-medium">
-                              {s.category}
-                            </TableCell>
-                            <TableCell className="text-xs">
-                              {s.brandName}
-                            </TableCell>
-                            <TableCell className="text-xs font-mono">
-                              {s.modelNumber}
-                            </TableCell>
-                            <TableCell>
-                              <StarRating rating={s.starRating} />
-                            </TableCell>
-                            <TableCell>
-                              <SampleStatusBadge status={s.sample1Status} />
-                            </TableCell>
-                            <TableCell>
-                              <SampleStatusBadge status={s.sample2Status} />
-                            </TableCell>
-                            <TableCell className="text-xs">
-                              {s.lab1Name ? (
-                                <span className="text-green-700 font-medium">
-                                  {s.lab1Name}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">Pending</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-xs">
-                              {s.lab2Name ? (
-                                <span className="text-green-700 font-medium">
-                                  {s.lab2Name}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">Pending</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {canPurchase ? (
-                                <Button
-                                  size="sm"
-                                  data-ocid={`second_check.purchase_button.${idx + 1}`}
-                                  className="text-xs h-7 bg-green-600 hover:bg-green-700 text-white"
-                                  onClick={() => {
-                                    setPurchaseDialog({
-                                      open: true,
-                                      sampleId: s.id,
-                                      brand: s.brandName,
-                                      model: s.modelNumber,
-                                      category: s.category,
-                                      starRating: s.starRating,
-                                    });
-                                    setForm(emptyForm());
-                                    setInvoiceFileName("");
-                                  }}
-                                >
-                                  <ShoppingCart size={12} className="mr-1" />
-                                  Purchase
-                                </Button>
-                              ) : (
-                                <Badge className="bg-gray-100 text-gray-500 border border-gray-200 text-xs">
-                                  Awaiting Lab Assignment
-                                </Badge>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* ── Block Dialog ── */}
+      {/* \u2500\u2500 Per-Sample Block Confirmation Dialog \u2500\u2500 */}
       <Dialog
         open={blockDialog.open}
         onOpenChange={(o) =>
@@ -611,6 +680,7 @@ export default function SecondCheckTestPage() {
           setBlockDialog({
             open: false,
             caseId: "",
+            sampleNumber: 1,
             brand: "",
             model: "",
             category: "",
@@ -618,9 +688,14 @@ export default function SecondCheckTestPage() {
           })
         }
       >
-        <DialogContent data-ocid="second_check.dialog" className="max-w-md">
+        <DialogContent
+          className="max-w-md"
+          data-ocid="secondcheck.block.dialog"
+        >
           <DialogHeader>
-            <DialogTitle>Block for 2nd Check Test</DialogTitle>
+            <DialogTitle>
+              Block Sample {blockDialog.sampleNumber} for 2nd Check Test
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="p-4 rounded-lg bg-blue-50 border border-blue-100 space-y-2">
@@ -631,36 +706,31 @@ export default function SecondCheckTestPage() {
                 <StarRating rating={blockDialog.starRating} />
               </div>
               <p className="font-semibold text-blue-900">
-                {blockDialog.brand} — {blockDialog.model}
+                {blockDialog.brand} \u2014 {blockDialog.model}
               </p>
               <p className="text-xs text-blue-600">{blockDialog.category}</p>
             </div>
-
             <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 text-sm">
               <p className="font-medium text-amber-800">
-                📦 2 sample units will be blocked
+                \uD83D\uDCE6 Sample {blockDialog.sampleNumber} will be blocked
+                independently
               </p>
               <p className="text-amber-700 text-xs mt-1">
-                Lab assignment will be sent to the Lab Coordinator. You can
-                proceed with purchase only after labs are confirmed.
+                A lab assignment request for Sample {blockDialog.sampleNumber}{" "}
+                will be sent to the Lab Coordinator. You can block the other
+                sample separately.
               </p>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50">
-              <span className="text-sm text-gray-600">Quantity</span>
-              <span className="font-bold text-gray-800 bg-white px-3 py-1 rounded border text-sm">
-                2 Units (Fixed)
-              </span>
             </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
-              data-ocid="second_check.cancel_button"
+              data-ocid="secondcheck.block.cancel_button"
               onClick={() =>
                 setBlockDialog({
                   open: false,
                   caseId: "",
+                  sampleNumber: 1,
                   brand: "",
                   model: "",
                   category: "",
@@ -671,31 +741,31 @@ export default function SecondCheckTestPage() {
               Cancel
             </Button>
             <Button
-              data-ocid="second_check.submit_button"
               style={{ backgroundColor: "#1a3a6b" }}
               className="text-white"
+              data-ocid="secondcheck.block.confirm_button"
               onClick={handleBlock}
             >
               <Lock size={14} className="mr-1" />
-              Confirm Block
+              Block Sample {blockDialog.sampleNumber}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ── Purchase Form Dialog (full form, matches 1st test) ── */}
+      {/* \u2500\u2500 Purchase Form Dialog \u2500\u2500 */}
       <Dialog
         open={purchaseDialog.open}
         onOpenChange={(o) => !o && closePurchaseDialog()}
       >
-        <DialogContent
-          data-ocid="second_check.purchase_dialog"
-          className="max-w-4xl max-h-[90vh] overflow-y-auto"
-        >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-base font-bold text-gray-800">
-                Product purchased details
+                Purchase \u2014 Sample {purchaseDialog.sampleNum} &nbsp;
+                <span className="text-sm font-normal text-gray-500">
+                  ({purchaseDialog.brand} / {purchaseDialog.model})
+                </span>
               </DialogTitle>
               {form.purchaseMode && (
                 <span
@@ -705,19 +775,24 @@ export default function SecondCheckTestPage() {
                       : "bg-green-100 text-green-700 border border-green-200"
                   }`}
                 >
-                  {isOnline ? "🌐 Online Purchase" : "🏪 Offline Purchase"}
+                  {isOnline
+                    ? "\uD83C\uDF10 Online Purchase"
+                    : "\uD83C\uDFEA Offline Purchase"}
                 </span>
               )}
             </div>
+            {purchaseDialog.labName && (
+              <p className="text-xs text-green-700 mt-1 font-medium">
+                \u2713 Assigned Lab: {purchaseDialog.labName}
+              </p>
+            )}
           </DialogHeader>
 
           <form onSubmit={handlePurchaseSubmit}>
             <div className="grid grid-cols-3 gap-x-4 gap-y-4 mt-2">
-              {/* Row 1 */}
               <div>
                 <p className="text-xs text-gray-600 mb-1">Purchase Date</p>
                 <Input
-                  data-ocid="second_check_purchase.date.input"
                   type="date"
                   value={form.purchaseDate}
                   onChange={(e) => setField("purchaseDate", e.target.value)}
@@ -733,7 +808,6 @@ export default function SecondCheckTestPage() {
                   onValueChange={(v) => setField("purchaseMode", v)}
                 >
                   <SelectTrigger
-                    data-ocid="second_check_purchase.mode.select"
                     className={`h-9 text-sm font-medium ${
                       isOnline
                         ? "border-blue-400 ring-1 ring-blue-300 text-blue-700"
@@ -747,7 +821,9 @@ export default function SecondCheckTestPage() {
                   <SelectContent>
                     {purchaseModeOptions.map((m) => (
                       <SelectItem key={m} value={m}>
-                        {m === "Online" ? "🌐 Online" : "🏪 Offline"}
+                        {m === "Online"
+                          ? "\uD83C\uDF10 Online"
+                          : "\uD83C\uDFEA Offline"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -756,7 +832,6 @@ export default function SecondCheckTestPage() {
               <div>
                 <p className="text-xs text-gray-600 mb-1">Retailer Name</p>
                 <Input
-                  data-ocid="second_check_purchase.retailer.input"
                   value={form.retailerName}
                   onChange={(e) => setField("retailerName", e.target.value)}
                   placeholder={
@@ -768,11 +843,9 @@ export default function SecondCheckTestPage() {
                 />
               </div>
 
-              {/* Row 2 */}
               <div>
                 <p className="text-xs text-gray-600 mb-1">Invoice Number</p>
                 <Input
-                  data-ocid="second_check_purchase.invoice_number.input"
                   value={form.invoiceNumber}
                   onChange={(e) => setField("invoiceNumber", e.target.value)}
                   placeholder="1234567888"
@@ -782,7 +855,6 @@ export default function SecondCheckTestPage() {
               <div>
                 <p className="text-xs text-gray-600 mb-1">Invoice Date</p>
                 <Input
-                  data-ocid="second_check_purchase.invoice_date.input"
                   type="date"
                   value={form.invoiceDate}
                   onChange={(e) => setField("invoiceDate", e.target.value)}
@@ -795,10 +867,7 @@ export default function SecondCheckTestPage() {
                   value={form.applianceName}
                   onValueChange={(v) => setField("applianceName", v)}
                 >
-                  <SelectTrigger
-                    data-ocid="second_check_purchase.appliance_name.select"
-                    className="h-9 text-sm"
-                  >
+                  <SelectTrigger className="h-9 text-sm">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -811,13 +880,11 @@ export default function SecondCheckTestPage() {
                 </Select>
               </div>
 
-              {/* Row 3 */}
               <div>
                 <p className="text-xs text-gray-600 mb-1">
                   Appliance brand name
                 </p>
                 <Input
-                  data-ocid="second_check_purchase.brand.input"
                   value={form.applianceBrand}
                   onChange={(e) => setField("applianceBrand", e.target.value)}
                   placeholder="Samsung/Realme"
@@ -829,7 +896,6 @@ export default function SecondCheckTestPage() {
                   Appliance model number
                 </p>
                 <Input
-                  data-ocid="second_check_purchase.model.input"
                   value={form.applianceModel}
                   onChange={(e) => setField("applianceModel", e.target.value)}
                   placeholder="Enter"
@@ -843,7 +909,6 @@ export default function SecondCheckTestPage() {
                     1st test check
                   </span>
                   <Input
-                    data-ocid="second_check_purchase.qty1.input"
                     type="number"
                     value={form.qty1stTest}
                     onChange={(e) => setField("qty1stTest", e.target.value)}
@@ -854,7 +919,6 @@ export default function SecondCheckTestPage() {
                     2nd test check
                   </span>
                   <Input
-                    data-ocid="second_check_purchase.qty2.input"
                     type="number"
                     value={form.qty2ndTest}
                     onChange={(e) => setField("qty2ndTest", e.target.value)}
@@ -864,11 +928,9 @@ export default function SecondCheckTestPage() {
                 </div>
               </div>
 
-              {/* Row 4 */}
               <div>
                 <p className="text-xs text-gray-600 mb-1">Invoice Amount</p>
                 <Input
-                  data-ocid="second_check_purchase.invoice_amount.input"
                   type="number"
                   value={form.invoiceAmount}
                   onChange={(e) => setField("invoiceAmount", e.target.value)}
@@ -881,7 +943,6 @@ export default function SecondCheckTestPage() {
                   Product star rating
                 </p>
                 <Input
-                  data-ocid="second_check_purchase.star_rating.input"
                   value={form.productStarRating}
                   onChange={(e) =>
                     setField("productStarRating", e.target.value)
@@ -897,7 +958,6 @@ export default function SecondCheckTestPage() {
                     Transportation cost
                   </p>
                   <Input
-                    data-ocid="second_check_purchase.transport.input"
                     type="number"
                     value={form.transportationCost}
                     onChange={(e) =>
@@ -915,13 +975,12 @@ export default function SecondCheckTestPage() {
                 </div>
               )}
 
-              {!isOnline ? (
+              {!isOnline && (
                 <div>
                   <p className="text-xs text-gray-600 mb-1">
                     Manpower cost - TA/Handling
                   </p>
                   <Input
-                    data-ocid="second_check_purchase.manpower.input"
                     type="number"
                     value={form.manpowerCost}
                     onChange={(e) => setField("manpowerCost", e.target.value)}
@@ -929,13 +988,11 @@ export default function SecondCheckTestPage() {
                     className="h-9 text-sm"
                   />
                 </div>
-              ) : null}
-
-              {!isOnline ? (
+              )}
+              {!isOnline && (
                 <div>
                   <p className="text-xs text-gray-600 mb-1">Insurance</p>
                   <Input
-                    data-ocid="second_check_purchase.insurance.input"
                     type="number"
                     value={form.insurance}
                     onChange={(e) => setField("insurance", e.target.value)}
@@ -943,29 +1000,24 @@ export default function SecondCheckTestPage() {
                     className="h-9 text-sm bg-gray-50"
                   />
                 </div>
-              ) : null}
+              )}
 
               <div>
                 <p className="text-xs text-gray-600 mb-1">Total Amount</p>
                 <Input
-                  data-ocid="second_check_purchase.total.input"
                   type="number"
                   value={form.totalAmount}
                   readOnly
                   className="h-9 text-sm bg-gray-50 font-medium"
                 />
               </div>
-
               <div>
                 <p className="text-xs text-gray-600 mb-1">Installment</p>
                 <Select
                   value={form.installment}
                   onValueChange={(v) => setField("installment", v)}
                 >
-                  <SelectTrigger
-                    data-ocid="second_check_purchase.installment.select"
-                    className="h-9 text-sm"
-                  >
+                  <SelectTrigger className="h-9 text-sm">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -978,75 +1030,29 @@ export default function SecondCheckTestPage() {
                 </Select>
               </div>
 
-              {/* Lab Assignment — shows both Lab 1 and Lab 2 for 2nd check */}
-              <div className="col-span-2">
-                <p className="text-xs text-gray-600 mb-1">Lab Assignment</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Lab 1</p>
-                    {activeSample?.lab1Name ? (
-                      <div
-                        className="p-2.5 rounded-lg flex items-center gap-2"
-                        style={{
-                          backgroundColor: "#f0fdf4",
-                          border: "1px solid #bbf7d0",
-                        }}
-                        data-ocid="second_check_purchase.lab1.success_state"
-                      >
-                        <span className="text-green-600 text-sm">✓</span>
-                        <p className="text-xs font-semibold text-green-800">
-                          {activeSample.lab1Name}
-                        </p>
-                      </div>
-                    ) : (
-                      <div data-ocid="second_check_purchase.lab1.loading_state">
-                        <Input
-                          disabled
-                          placeholder="Awaiting Lab Coordinator Assignment"
-                          className="h-9 text-sm bg-gray-50 text-gray-400"
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Lab 2</p>
-                    {activeSample?.lab2Name ? (
-                      <div
-                        className="p-2.5 rounded-lg flex items-center gap-2"
-                        style={{
-                          backgroundColor: "#f0fdf4",
-                          border: "1px solid #bbf7d0",
-                        }}
-                        data-ocid="second_check_purchase.lab2.success_state"
-                      >
-                        <span className="text-green-600 text-sm">✓</span>
-                        <p className="text-xs font-semibold text-green-800">
-                          {activeSample.lab2Name}
-                        </p>
-                      </div>
-                    ) : (
-                      <div data-ocid="second_check_purchase.lab2.loading_state">
-                        <Input
-                          disabled
-                          placeholder="Awaiting Lab Coordinator Assignment"
-                          className="h-9 text-sm bg-gray-50 text-gray-400"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  ⏳ Lab information is auto-filled once Lab Coordinator assigns
-                  both labs.
+              {/* Lab Assignment \u2014 read-only for this sample */}
+              <div>
+                <p className="text-xs text-gray-600 mb-1">
+                  Assigned Lab (Sample {purchaseDialog.sampleNum})
                 </p>
+                <div
+                  className="p-2.5 rounded-lg flex items-center gap-2"
+                  style={{
+                    backgroundColor: "#f0fdf4",
+                    border: "1px solid #bbf7d0",
+                  }}
+                >
+                  <span className="text-green-600 text-sm">\u2713</span>
+                  <p className="text-xs font-semibold text-green-800">
+                    {purchaseDialog.labName}
+                  </p>
+                </div>
               </div>
 
-              {/* Invoice file */}
               <div>
                 <p className="text-xs text-gray-600 mb-1">Invoice</p>
                 <div className="relative">
                   <Input
-                    data-ocid="second_check_purchase.invoice_file.input"
                     readOnly
                     value={invoiceFileName}
                     placeholder="Choose...."
@@ -1069,15 +1075,17 @@ export default function SecondCheckTestPage() {
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-4 w-4"
-                      viewBox="0 0 24 24"
                       fill="none"
+                      viewBox="0 0 24 24"
                       stroke="currentColor"
-                      strokeWidth={2}
-                      role="img"
-                      aria-label="Attach file"
                     >
-                      <title>Attach file</title>
-                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                      <title>Upload</title>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                      />
                     </svg>
                   </button>
                   <input
@@ -1091,32 +1099,22 @@ export default function SecondCheckTestPage() {
               </div>
             </div>
 
-            {isOnline && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-xs text-blue-700 font-medium">
-                  ℹ️ Online Purchase Mode: Transportation cost, Manpower cost
-                  (TA/Handling), and Insurance fields are not applicable and
-                  have been hidden.
-                </p>
-              </div>
-            )}
-
             <DialogFooter className="mt-6 gap-2">
               <Button
-                data-ocid="second_check_purchase.cancel.cancel_button"
                 type="button"
                 variant="outline"
-                className="border-red-500 text-red-600 hover:bg-red-50"
                 onClick={closePurchaseDialog}
+                data-ocid="secondcheck.purchase.cancel_button"
               >
                 Cancel
               </Button>
               <Button
-                data-ocid="second_check_purchase.submit.submit_button"
                 type="submit"
-                className="bg-green-700 hover:bg-green-800 text-white px-8"
+                style={{ backgroundColor: "#1a3a6b", color: "white" }}
+                data-ocid="secondcheck.purchase.submit_button"
               >
-                Submit
+                <ShoppingCart size={14} className="mr-1" />
+                Confirm Purchase
               </Button>
             </DialogFooter>
           </form>

@@ -27,12 +27,14 @@ export interface BlockedSample {
 export interface SecondCheckLabRequest {
   id: string;
   caseId: string;
+  sampleNumber: 1 | 2;
   brandName: string;
   modelNumber: string;
   categoryName: string;
   starRating: number;
   blockedAt: string;
-  labAssignment?: { lab1: string; lab2: string; assignedAt: string };
+  labName?: string;
+  assignedAt?: string;
 }
 
 interface BlockedSamplesContextType {
@@ -41,6 +43,8 @@ interface BlockedSamplesContextType {
   assignLab: (sampleId: number, labAssignment: LabAssignment) => void;
   secondCheckLabRequests: SecondCheckLabRequest[];
   addSecondCheckLabRequest: (req: SecondCheckLabRequest) => void;
+  assignSingleSampleLab: (requestId: string, labName: string) => void;
+  /** @deprecated use addSecondCheckLabRequest + assignSingleSampleLab */
   assignSecondCheckLabs: (caseId: string, lab1: string, lab2: string) => void;
 }
 
@@ -67,30 +71,42 @@ export function BlockedSamplesProvider({
   };
 
   const addSecondCheckLabRequest = (req: SecondCheckLabRequest) => {
-    // Avoid duplicates
+    // Avoid duplicate for same caseId + sampleNumber
     setSecondCheckLabRequests((prev) =>
-      prev.some((r) => r.caseId === req.caseId) ? prev : [req, ...prev],
+      prev.some(
+        (r) => r.caseId === req.caseId && r.sampleNumber === req.sampleNumber,
+      )
+        ? prev
+        : [req, ...prev],
     );
   };
 
+  const assignSingleSampleLab = (requestId: string, labName: string) => {
+    setSecondCheckLabRequests((prev) =>
+      prev.map((r) =>
+        r.id === requestId
+          ? { ...r, labName, assignedAt: new Date().toISOString() }
+          : r,
+      ),
+    );
+  };
+
+  /** Legacy helper — assigns both samples at once (used by older code) */
   const assignSecondCheckLabs = (
     caseId: string,
     lab1: string,
     lab2: string,
   ) => {
+    const now = new Date().toISOString();
     setSecondCheckLabRequests((prev) =>
-      prev.map((r) =>
-        r.caseId === caseId
-          ? {
-              ...r,
-              labAssignment: {
-                lab1,
-                lab2,
-                assignedAt: new Date().toISOString(),
-              },
-            }
-          : r,
-      ),
+      prev.map((r) => {
+        if (r.caseId !== caseId) return r;
+        if (r.sampleNumber === 1)
+          return { ...r, labName: lab1, assignedAt: now };
+        if (r.sampleNumber === 2)
+          return { ...r, labName: lab2, assignedAt: now };
+        return r;
+      }),
     );
   };
 
@@ -102,6 +118,7 @@ export function BlockedSamplesProvider({
         assignLab,
         secondCheckLabRequests,
         addSecondCheckLabRequest,
+        assignSingleSampleLab,
         assignSecondCheckLabs,
       }}
     >

@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type {
@@ -49,8 +50,8 @@ const emptyForm = (): Omit<LabAssignment, "assignedAt"> => ({
 function StarDisplay({ rating }: { rating: number }) {
   return (
     <span className="text-amber-500 text-xs">
-      {"★".repeat(rating)}
-      <span className="text-gray-300">{"★".repeat(5 - rating)}</span>
+      {"\u2605".repeat(rating)}
+      <span className="text-gray-300">{"\u2605".repeat(5 - rating)}</span>
     </span>
   );
 }
@@ -60,24 +61,21 @@ export default function AssignLabPage() {
     blockedSamples,
     assignLab,
     secondCheckLabRequests,
-    assignSecondCheckLabs,
+    assignSingleSampleLab,
   } = useBlockedSamples();
-  const { assignSecondCheckLab } = useSecondCheck();
+  const { assignSampleLab } = useSecondCheck();
 
   // Regular samples state
   const [assignTarget, setAssignTarget] = useState<BlockedSample | null>(null);
   const [viewTarget, setViewTarget] = useState<BlockedSample | null>(null);
   const [form, setForm] = useState(emptyForm());
 
-  // 2nd Check state
-  const [secondCheckAssignTarget, setSecondCheckAssignTarget] =
+  // 2nd Check per-sample assign state
+  const [scAssignTarget, setScAssignTarget] =
     useState<SecondCheckLabRequest | null>(null);
-  const [scLab1, setScLab1] = useState("");
-  const [scLab2, setScLab2] = useState("");
+  const [scLabName, setScLabName] = useState("");
 
-  const pendingSecondCheck = secondCheckLabRequests.filter(
-    (r) => !r.labAssignment,
-  );
+  const pendingSecondCheck = secondCheckLabRequests.filter((r) => !r.labName);
 
   const setField = (field: keyof ReturnType<typeof emptyForm>, value: string) =>
     setForm((f) => ({ ...f, [field]: value }));
@@ -105,25 +103,24 @@ export default function AssignLabPage() {
   };
 
   const handleSecondCheckAssign = () => {
-    if (!secondCheckAssignTarget) return;
-    if (!scLab1 || !scLab2) {
-      toast.error("Please select both Lab 1 and Lab 2.");
+    if (!scAssignTarget) return;
+    if (!scLabName) {
+      toast.error("Please select a lab.");
       return;
     }
-    if (scLab1 === scLab2) {
-      toast.error("Lab 1 and Lab 2 must be different.");
-      return;
-    }
-    const caseId = secondCheckAssignTarget.caseId;
-    // Update both contexts
-    assignSecondCheckLabs(caseId, scLab1, scLab2);
-    assignSecondCheckLab(caseId, scLab1, scLab2);
-    toast.success(
-      `Labs assigned: ${scLab1} (Sample 1) & ${scLab2} (Sample 2). Purchaser notified.`,
+    // Update BlockedSamplesContext
+    assignSingleSampleLab(scAssignTarget.id, scLabName);
+    // Update SecondCheckContext
+    assignSampleLab(
+      scAssignTarget.caseId,
+      scAssignTarget.sampleNumber,
+      scLabName,
     );
-    setSecondCheckAssignTarget(null);
-    setScLab1("");
-    setScLab2("");
+    toast.success(
+      `Lab assigned to Sample ${scAssignTarget.sampleNumber}: ${scLabName}. Purchaser notified.`,
+    );
+    setScAssignTarget(null);
+    setScLabName("");
   };
 
   return (
@@ -139,17 +136,17 @@ export default function AssignLabPage() {
 
       <Tabs defaultValue="regular">
         <TabsList className="mb-5">
-          <TabsTrigger value="regular" data-ocid="assignlab.regular_tab">
+          <TabsTrigger value="regular" data-ocid="assignlab.regular.tab">
             Regular Samples
             {blockedSamples.filter((s) => !s.labAssignment).length > 0 && (
-              <span className="ml-2 bg-amber-500 text-white text-xs rounded-full px-1.5 py-0.5">
+              <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                 {blockedSamples.filter((s) => !s.labAssignment).length}
               </span>
             )}
           </TabsTrigger>
           <TabsTrigger
             value="secondcheck"
-            data-ocid="assignlab.secondcheck_tab"
+            data-ocid="assignlab.secondcheck.tab"
           >
             2nd Check Test Samples
             {pendingSecondCheck.length > 0 && (
@@ -160,7 +157,7 @@ export default function AssignLabPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* ── Regular Samples Tab ── */}
+        {/* \u2500\u2500 Regular Samples Tab \u2500\u2500 */}
         <TabsContent value="regular">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             {blockedSamples.length === 0 ? (
@@ -218,7 +215,7 @@ export default function AssignLabPage() {
                           {s.modelNumber}
                         </td>
                         <td className="px-3 py-2.5 text-xs">
-                          {"★".repeat(s.starRating)}
+                          {"\u2605".repeat(s.starRating)}
                         </td>
                         <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">
                           {new Date(s.blockedAt).toLocaleDateString("en-IN")}
@@ -275,7 +272,7 @@ export default function AssignLabPage() {
           </div>
         </TabsContent>
 
-        {/* ── 2nd Check Test Samples Tab ── */}
+        {/* \u2500\u2500 2nd Check Test Samples Tab \u2500\u2500 */}
         <TabsContent value="secondcheck">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             {secondCheckLabRequests.length === 0 ? (
@@ -298,9 +295,9 @@ export default function AssignLabPage() {
                         "Brand",
                         "Model",
                         "Star Rating",
+                        "Sample",
                         "Blocked On",
-                        "Lab 1",
-                        "Lab 2",
+                        "Assigned Lab",
                         "Status",
                         "Action",
                       ].map((h) => (
@@ -335,31 +332,33 @@ export default function AssignLabPage() {
                         <td className="px-3 py-2.5">
                           <StarDisplay rating={r.starRating} />
                         </td>
+                        <td className="px-3 py-2.5">
+                          <span
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              r.sampleNumber === 1
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-purple-100 text-purple-800"
+                            }`}
+                          >
+                            Sample {r.sampleNumber}
+                          </span>
+                        </td>
                         <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">
                           {new Date(r.blockedAt).toLocaleDateString("en-IN")}
                         </td>
                         <td className="px-3 py-2.5 text-xs">
-                          {r.labAssignment ? (
+                          {r.labName ? (
                             <span className="text-green-700 font-medium">
-                              {r.labAssignment.lab1}
+                              {r.labName}
                             </span>
                           ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2.5 text-xs">
-                          {r.labAssignment ? (
-                            <span className="text-green-700 font-medium">
-                              {r.labAssignment.lab2}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-gray-400">\u2014</span>
                           )}
                         </td>
                         <td className="px-3 py-2.5">
-                          {r.labAssignment ? (
+                          {r.labName ? (
                             <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
-                              Labs Assigned
+                              Lab Assigned
                             </span>
                           ) : (
                             <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 font-medium">
@@ -368,7 +367,7 @@ export default function AssignLabPage() {
                           )}
                         </td>
                         <td className="px-3 py-2.5">
-                          {r.labAssignment ? (
+                          {r.labName ? (
                             <span className="text-xs text-gray-400">
                               Completed
                             </span>
@@ -382,12 +381,11 @@ export default function AssignLabPage() {
                                 color: "white",
                               }}
                               onClick={() => {
-                                setSecondCheckAssignTarget(r);
-                                setScLab1("");
-                                setScLab2("");
+                                setScAssignTarget(r);
+                                setScLabName("");
                               }}
                             >
-                              Assign Labs
+                              Assign Lab
                             </Button>
                           )}
                         </td>
@@ -401,7 +399,7 @@ export default function AssignLabPage() {
         </TabsContent>
       </Tabs>
 
-      {/* ── Regular Sample: Assign Lab Dialog ── */}
+      {/* \u2500\u2500 Regular Sample: Assign Lab Dialog \u2500\u2500 */}
       <Dialog
         open={!!assignTarget}
         onOpenChange={(o) => {
@@ -418,8 +416,8 @@ export default function AssignLabPage() {
             </DialogTitle>
             {assignTarget && (
               <p className="text-xs text-gray-500 mt-1">
-                {assignTarget.brandName} · {assignTarget.modelNumber} ·{" "}
-                {assignTarget.categoryName}
+                {assignTarget.brandName} \u00b7 {assignTarget.modelNumber}{" "}
+                \u00b7 {assignTarget.categoryName}
               </p>
             )}
           </DialogHeader>
@@ -525,14 +523,13 @@ export default function AssignLabPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── 2nd Check: Assign Labs Dialog ── */}
+      {/* \u2500\u2500 2nd Check: Assign Lab per Sample Dialog \u2500\u2500 */}
       <Dialog
-        open={!!secondCheckAssignTarget}
+        open={!!scAssignTarget}
         onOpenChange={(o) => {
           if (!o) {
-            setSecondCheckAssignTarget(null);
-            setScLab1("");
-            setScLab2("");
+            setScAssignTarget(null);
+            setScLabName("");
           }
         }}
       >
@@ -542,31 +539,39 @@ export default function AssignLabPage() {
         >
           <DialogHeader>
             <DialogTitle className="text-base" style={{ color: "#1a3a6b" }}>
-              Assign Labs — 2nd Check Test
+              Assign Lab \u2014 Sample {scAssignTarget?.sampleNumber ?? ""}
             </DialogTitle>
-            {secondCheckAssignTarget && (
+            {scAssignTarget && (
               <p className="text-xs text-gray-500 mt-1">
-                {secondCheckAssignTarget.brandName} ·{" "}
-                {secondCheckAssignTarget.modelNumber} ·{" "}
-                {secondCheckAssignTarget.categoryName}
+                {scAssignTarget.brandName} \u00b7 {scAssignTarget.modelNumber}{" "}
+                \u00b7 {scAssignTarget.categoryName}
               </p>
             )}
           </DialogHeader>
           <div className="space-y-4 mt-2">
-            <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 text-xs text-blue-700">
-              Each of the 2 sample units must be tested by a{" "}
-              <strong>different lab</strong>.
+            <div
+              className={`p-3 rounded-lg text-xs font-medium ${
+                scAssignTarget?.sampleNumber === 1
+                  ? "bg-blue-50 border border-blue-100 text-blue-700"
+                  : "bg-purple-50 border border-purple-100 text-purple-700"
+              }`}
+            >
+              Assigning lab independently for{" "}
+              <strong>Sample {scAssignTarget?.sampleNumber}</strong> only. The
+              other sample can be assigned separately.
             </div>
             <div>
               <Label className="text-xs font-semibold text-gray-700 mb-1 block">
-                Lab 1 — Sample 1 <span className="text-red-500">*</span>
+                Select Lab <span className="text-red-500">*</span>
               </Label>
-              <Select value={scLab1} onValueChange={setScLab1}>
+              <Select value={scLabName} onValueChange={setScLabName}>
                 <SelectTrigger
-                  data-ocid="assignlab.secondcheck.lab1.select"
+                  data-ocid="assignlab.secondcheck.lab.select"
                   className="h-9 text-sm"
                 >
-                  <SelectValue placeholder="Select Lab for Sample 1" />
+                  <SelectValue
+                    placeholder={`Select Lab for Sample ${scAssignTarget?.sampleNumber ?? ""}`}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {labOptions.map((l) => (
@@ -577,42 +582,14 @@ export default function AssignLabPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="text-xs font-semibold text-gray-700 mb-1 block">
-                Lab 2 — Sample 2 <span className="text-red-500">*</span>
-              </Label>
-              <Select value={scLab2} onValueChange={setScLab2}>
-                <SelectTrigger
-                  data-ocid="assignlab.secondcheck.lab2.select"
-                  className="h-9 text-sm"
-                >
-                  <SelectValue placeholder="Select Lab for Sample 2 (different)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {labOptions
-                    .filter((l) => l !== scLab1)
-                    .map((l) => (
-                      <SelectItem key={l} value={l}>
-                        {l}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              {scLab1 && scLab2 && scLab1 === scLab2 && (
-                <p className="text-xs text-red-500 mt-1">
-                  Labs must be different.
-                </p>
-              )}
-            </div>
           </div>
           <DialogFooter className="mt-5 gap-2">
             <Button
               data-ocid="assignlab.secondcheck.cancel_button"
               variant="outline"
               onClick={() => {
-                setSecondCheckAssignTarget(null);
-                setScLab1("");
-                setScLab2("");
+                setScAssignTarget(null);
+                setScLabName("");
               }}
             >
               Cancel
@@ -622,13 +599,13 @@ export default function AssignLabPage() {
               style={{ backgroundColor: "#1a3a6b", color: "white" }}
               onClick={handleSecondCheckAssign}
             >
-              Assign Labs
+              Assign Lab
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ── View Regular Lab Details Dialog ── */}
+      {/* \u2500\u2500 View Regular Lab Details Dialog \u2500\u2500 */}
       <Dialog
         open={!!viewTarget}
         onOpenChange={(o) => {
@@ -642,7 +619,7 @@ export default function AssignLabPage() {
             </DialogTitle>
             {viewTarget && (
               <p className="text-xs text-gray-500 mt-1">
-                {viewTarget.brandName} · {viewTarget.modelNumber}
+                {viewTarget.brandName} \u00b7 {viewTarget.modelNumber}
               </p>
             )}
           </DialogHeader>

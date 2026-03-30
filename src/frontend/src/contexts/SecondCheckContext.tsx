@@ -13,6 +13,7 @@ export type SecondCheckStatus =
   | "NFT";
 
 export type SampleBlockStatus =
+  | "Not Blocked"
   | "Awaiting Lab Assignment"
   | "Lab Assigned"
   | "In Transit"
@@ -51,6 +52,10 @@ export interface SecondCheckSample {
   purchaser: string;
   lab1Name: string;
   lab2Name: string;
+  /** Whether Sample 1 has been individually blocked */
+  sample1Blocked: boolean;
+  /** Whether Sample 2 has been individually blocked */
+  sample2Blocked: boolean;
   /** Per-sample block/purchase status shown in purchaser view */
   sample1Status: SampleBlockStatus;
   sample2Status: SampleBlockStatus;
@@ -72,7 +77,17 @@ interface SecondCheckContextType {
   initiateSecondCheck: () => void;
   secondCheckRequests: FailedCase[];
   secondCheckSamples: SecondCheckSample[];
+  /** Block a single sample (1 or 2) independently */
+  submitSingleSampleBlock: (caseId: string, sampleNumber: 1 | 2) => void;
+  /** @deprecated use submitSingleSampleBlock */
   submitSecondCheckBlock: (caseId: string) => void;
+  /** Assign lab for a single sample */
+  assignSampleLab: (
+    caseId: string,
+    sampleNumber: 1 | 2,
+    labName: string,
+  ) => void;
+  /** @deprecated use assignSampleLab */
   assignSecondCheckLab: (caseId: string, lab1: string, lab2: string) => void;
   proposeTestDate: (sampleId: string, date: string, labName: string) => void;
   approveTestDate: (sampleId: string) => void;
@@ -161,55 +176,127 @@ export function SecondCheckProvider({
     setFailedCases((prev) => prev.map((c) => ({ ...c, dispatched: true })));
   };
 
-  /** Purchaser blocks a case — creates one record with both samples awaiting lab assignment */
-  const submitSecondCheckBlock = (caseId: string) => {
+  /** Block a single sample independently. Creates the parent record if needed. */
+  const submitSingleSampleBlock = (caseId: string, sampleNumber: 1 | 2) => {
     const fc = failedCases.find((c) => c.id === caseId);
     if (!fc) return;
-    // Don't allow double-blocking
-    if (secondCheckSamples.some((s) => s.caseId === caseId)) return;
     const now = new Date().toISOString().split("T")[0];
-    const record: SecondCheckSample = {
-      id: `SC-${caseId}-${Date.now()}`,
-      caseId,
-      brandName: fc.brandName,
-      modelNumber: fc.modelNumber,
-      category: fc.category,
-      starRating: fc.starRating,
-      purchaser: "SDA Purchaser",
-      lab1Name: "",
-      lab2Name: "",
-      sample1Status: "Awaiting Lab Assignment",
-      sample2Status: "Awaiting Lab Assignment",
-      status: "InTransit",
-      blockedOn: now,
-      statusLog: [],
-    };
-    setSecondCheckSamples((prev) => [...prev, record]);
+    const existing = secondCheckSamples.find((s) => s.caseId === caseId);
+    if (!existing) {
+      // Create a new record with only this sample blocked
+      const record: SecondCheckSample = {
+        id: `SC-${caseId}-${Date.now()}`,
+        caseId,
+        brandName: fc.brandName,
+        modelNumber: fc.modelNumber,
+        category: fc.category,
+        starRating: fc.starRating,
+        purchaser: "SDA Purchaser",
+        lab1Name: "",
+        lab2Name: "",
+        sample1Blocked: sampleNumber === 1,
+        sample2Blocked: sampleNumber === 2,
+        sample1Status:
+          sampleNumber === 1 ? "Awaiting Lab Assignment" : "Not Blocked",
+        sample2Status:
+          sampleNumber === 2 ? "Awaiting Lab Assignment" : "Not Blocked",
+        status: "InTransit",
+        blockedOn: now,
+        statusLog: [],
+      };
+      setSecondCheckSamples((prev) => [...prev, record]);
+    } else {
+      // Update the existing record for this sample
+      setSecondCheckSamples((prev) =>
+        prev.map((s) =>
+          s.caseId === caseId
+            ? {
+                ...s,
+                sample1Blocked: sampleNumber === 1 ? true : s.sample1Blocked,
+                sample2Blocked: sampleNumber === 2 ? true : s.sample2Blocked,
+                sample1Status:
+                  sampleNumber === 1
+                    ? "Awaiting Lab Assignment"
+                    : s.sample1Status,
+                sample2Status:
+                  sampleNumber === 2
+                    ? "Awaiting Lab Assignment"
+                    : s.sample2Status,
+              }
+            : s,
+        ),
+      );
+    }
   };
 
-  /** Lab Coordinator assigns labs to a blocked 2nd check case */
-  const assignSecondCheckLab = (caseId: string, lab1: string, lab2: string) => {
-    setSecondCheckSamples((prev) =>
-      prev.map((s) =>
+  /** @deprecated use submitSingleSampleBlock for each sample */
+  const submitSecondCheckBlock = (caseId: string) => {
+    submitSingleSampleBlock(caseId, 1);
+    // Also block sample 2 immediately (legacy behaviour)
+    const fc = failedCases.find((c) => c.id === caseId);
+    if (!fc) return;
+    const now = new Date().toISOString().split("T")[0];
+    setSecondCheckSamples((prev) => {
+      const existing = prev.find((s) => s.caseId === caseId);
+      if (!existing) return prev;
+      return prev.map((s) =>
         s.caseId === caseId
           ? {
               ...s,
-              lab1Name: lab1,
-              lab2Name: lab2,
-              sample1Status: "Lab Assigned" as SampleBlockStatus,
-              sample2Status: "Lab Assigned" as SampleBlockStatus,
-              statusLog: [
-                ...s.statusLog,
-                {
-                  status: "InTransit" as SecondCheckStatus,
-                  date: new Date().toISOString().split("T")[0],
-                  remarks: `Labs assigned: ${lab1} (Sample 1), ${lab2} (Sample 2)`,
-                },
-              ],
+              sample2Blocked: true,
+              sample2Status: "Awaiting Lab Assignment" as SampleBlockStatus,
+              blockedOn: now,
             }
           : s,
-      ),
+      );
+    });
+  };
+
+  /** Assign a lab to a specific sample (1 or 2) for a case */
+  const assignSampleLab = (
+    caseId: string,
+    sampleNumber: 1 | 2,
+    labName: string,
+  ) => {
+    setSecondCheckSamples((prev) =>
+      prev.map((s) => {
+        if (s.caseId !== caseId) return s;
+        if (sampleNumber === 1) {
+          return {
+            ...s,
+            lab1Name: labName,
+            sample1Status: "Lab Assigned" as SampleBlockStatus,
+            statusLog: [
+              ...s.statusLog,
+              {
+                status: "InTransit" as SecondCheckStatus,
+                date: new Date().toISOString().split("T")[0],
+                remarks: `Lab assigned for Sample 1: ${labName}`,
+              },
+            ],
+          };
+        }
+        return {
+          ...s,
+          lab2Name: labName,
+          sample2Status: "Lab Assigned" as SampleBlockStatus,
+          statusLog: [
+            ...s.statusLog,
+            {
+              status: "InTransit" as SecondCheckStatus,
+              date: new Date().toISOString().split("T")[0],
+              remarks: `Lab assigned for Sample 2: ${labName}`,
+            },
+          ],
+        };
+      }),
     );
+  };
+
+  /** @deprecated use assignSampleLab */
+  const assignSecondCheckLab = (caseId: string, lab1: string, lab2: string) => {
+    assignSampleLab(caseId, 1, lab1);
+    assignSampleLab(caseId, 2, lab2);
   };
 
   const proposeTestDate = (
@@ -396,7 +483,9 @@ export function SecondCheckProvider({
         initiateSecondCheck,
         secondCheckRequests,
         secondCheckSamples,
+        submitSingleSampleBlock,
         submitSecondCheckBlock,
+        assignSampleLab,
         assignSecondCheckLab,
         proposeTestDate,
         approveTestDate,

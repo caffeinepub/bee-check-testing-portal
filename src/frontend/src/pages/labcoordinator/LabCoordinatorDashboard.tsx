@@ -17,9 +17,7 @@ export default function LabCoordinatorDashboard({ onNavigate }: Props) {
   const pending = blockedSamples.filter((s) => !s.labAssignment);
   const assigned = blockedSamples.filter((s) => !!s.labAssignment);
   const recent = blockedSamples.slice(0, 5);
-  const pendingSecondCheck = secondCheckLabRequests.filter(
-    (r) => !r.labAssignment,
-  );
+  const pendingSecondCheck = secondCheckLabRequests.filter((r) => !r.labName);
 
   const kpis = [
     {
