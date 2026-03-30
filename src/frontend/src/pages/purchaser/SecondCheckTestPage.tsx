@@ -8,6 +8,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -18,10 +26,60 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2, FlaskConical, Lock, ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useBlockedSamples } from "../../contexts/BlockedSamplesContext";
 import { useSecondCheck } from "../../contexts/SecondCheckContext";
+import { applianceCategories } from "../../data/mockData";
+
+const installmentOptions = [
+  "1st Installment",
+  "2nd Installment",
+  "3rd Installment",
+];
+const purchaseModeOptions = ["Online", "Offline"];
+
+interface PurchaseFormState {
+  purchaseDate: string;
+  purchaseMode: string;
+  retailerName: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  applianceName: string;
+  applianceBrand: string;
+  applianceModel: string;
+  qty1stTest: string;
+  qty2ndTest: string;
+  invoiceAmount: string;
+  productStarRating: string;
+  transportationCost: string;
+  manpowerCost: string;
+  insurance: string;
+  totalAmount: string;
+  installment: string;
+  invoiceFile: File | null;
+}
+
+const emptyForm = (): PurchaseFormState => ({
+  purchaseDate: "",
+  purchaseMode: "",
+  retailerName: "",
+  invoiceNumber: "",
+  invoiceDate: "",
+  applianceName: "",
+  applianceBrand: "",
+  applianceModel: "",
+  qty1stTest: "1",
+  qty2ndTest: "2",
+  invoiceAmount: "",
+  productStarRating: "",
+  transportationCost: "0",
+  manpowerCost: "0",
+  insurance: "0",
+  totalAmount: "0",
+  installment: "",
+  invoiceFile: null,
+});
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -81,7 +139,75 @@ export default function SecondCheckTestPage() {
     sampleId: string;
     brand: string;
     model: string;
-  }>({ open: false, sampleId: "", brand: "", model: "" });
+    category: string;
+    starRating: number;
+  }>({
+    open: false,
+    sampleId: "",
+    brand: "",
+    model: "",
+    category: "",
+    starRating: 0,
+  });
+
+  const [form, setForm] = useState<PurchaseFormState>(emptyForm());
+  const [invoiceFileName, setInvoiceFileName] = useState("");
+
+  const isOnline = form.purchaseMode === "Online";
+
+  const activeSample = secondCheckSamples.find(
+    (s) => s.id === purchaseDialog.sampleId,
+  );
+
+  // Auto-fill form when dialog opens
+  useEffect(() => {
+    if (purchaseDialog.open && activeSample) {
+      setForm((f) => ({
+        ...f,
+        applianceName: activeSample.category,
+        applianceBrand: activeSample.brandName,
+        applianceModel: activeSample.modelNumber,
+        productStarRating: "★".repeat(activeSample.starRating),
+      }));
+    }
+  }, [purchaseDialog.open, activeSample]);
+
+  // Auto-calculate total amount
+  useEffect(() => {
+    const invoice = Number.parseFloat(form.invoiceAmount) || 0;
+    if (isOnline) {
+      setForm((f) => ({ ...f, totalAmount: String(invoice) }));
+    } else {
+      const transport = Number.parseFloat(form.transportationCost) || 0;
+      const manpower = Number.parseFloat(form.manpowerCost) || 0;
+      const insurance = Number.parseFloat(form.insurance) || 0;
+      setForm((f) => ({
+        ...f,
+        totalAmount: String(invoice + transport + manpower + insurance),
+      }));
+    }
+  }, [
+    form.invoiceAmount,
+    form.transportationCost,
+    form.manpowerCost,
+    form.insurance,
+    isOnline,
+  ]);
+
+  // Reset offline-only fields when switching to Online
+  useEffect(() => {
+    if (isOnline) {
+      setForm((f) => ({
+        ...f,
+        transportationCost: "0",
+        manpowerCost: "0",
+        insurance: "0",
+      }));
+    }
+  }, [isOnline]);
+
+  const setField = (field: keyof PurchaseFormState, value: string) =>
+    setForm((f) => ({ ...f, [field]: value }));
 
   const blockedCaseIds = new Set(secondCheckSamples.map((s) => s.caseId));
 
@@ -110,11 +236,43 @@ export default function SecondCheckTestPage() {
     });
   };
 
-  const handlePurchaseConfirm = () => {
+  const closePurchaseDialog = () => {
+    setPurchaseDialog({
+      open: false,
+      sampleId: "",
+      brand: "",
+      model: "",
+      category: "",
+      starRating: 0,
+    });
+    setForm(emptyForm());
+    setInvoiceFileName("");
+  };
+
+  const handlePurchaseSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !form.purchaseDate ||
+      !form.retailerName ||
+      !form.invoiceNumber ||
+      !form.invoiceAmount ||
+      !form.installment
+    ) {
+      toast.error("Please fill all required purchase details");
+      return;
+    }
     toast.success(
-      `Purchase confirmed for ${purchaseDialog.brand} — ${purchaseDialog.model}. Both samples submitted to respective labs.`,
+      `Purchase confirmed for ${purchaseDialog.brand} — ${purchaseDialog.model}. Both samples submitted to their assigned labs.`,
     );
-    setPurchaseDialog({ open: false, sampleId: "", brand: "", model: "" });
+    closePurchaseDialog();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setForm((f) => ({ ...f, invoiceFile: file }));
+      setInvoiceFileName(file.name);
+    }
   };
 
   return (
@@ -411,14 +569,18 @@ export default function SecondCheckTestPage() {
                                   size="sm"
                                   data-ocid={`second_check.purchase_button.${idx + 1}`}
                                   className="text-xs h-7 bg-green-600 hover:bg-green-700 text-white"
-                                  onClick={() =>
+                                  onClick={() => {
                                     setPurchaseDialog({
                                       open: true,
                                       sampleId: s.id,
                                       brand: s.brandName,
                                       model: s.modelNumber,
-                                    })
-                                  }
+                                      category: s.category,
+                                      starRating: s.starRating,
+                                    });
+                                    setForm(emptyForm());
+                                    setInvoiceFileName("");
+                                  }}
                                 >
                                   <ShoppingCart size={12} className="mr-1" />
                                   Purchase
@@ -521,60 +683,443 @@ export default function SecondCheckTestPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Purchase Confirmation Dialog ── */}
+      {/* ── Purchase Form Dialog (full form, matches 1st test) ── */}
       <Dialog
         open={purchaseDialog.open}
-        onOpenChange={(o) =>
-          !o &&
-          setPurchaseDialog({ open: false, sampleId: "", brand: "", model: "" })
-        }
+        onOpenChange={(o) => !o && closePurchaseDialog()}
       >
         <DialogContent
           data-ocid="second_check.purchase_dialog"
-          className="max-w-sm"
+          className="max-w-4xl max-h-[90vh] overflow-y-auto"
         >
           <DialogHeader>
-            <DialogTitle>Confirm Purchase</DialogTitle>
-          </DialogHeader>
-          <div className="py-3 space-y-3">
-            <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-              <p className="font-semibold text-green-800 text-sm">
-                {purchaseDialog.brand} — {purchaseDialog.model}
-              </p>
-              <p className="text-green-700 text-xs mt-1">
-                Both sample units will be dispatched to their assigned labs for
-                2nd check testing.
-              </p>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-base font-bold text-gray-800">
+                Product purchased details
+              </DialogTitle>
+              {form.purchaseMode && (
+                <span
+                  className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                    isOnline
+                      ? "bg-blue-100 text-blue-700 border border-blue-200"
+                      : "bg-green-100 text-green-700 border border-green-200"
+                  }`}
+                >
+                  {isOnline ? "🌐 Online Purchase" : "🏪 Offline Purchase"}
+                </span>
+              )}
             </div>
-            <p className="text-sm text-gray-600">
-              Confirm purchase of <strong>2 units</strong> for 2nd check
-              testing?
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              data-ocid="second_check.purchase_cancel_button"
-              onClick={() =>
-                setPurchaseDialog({
-                  open: false,
-                  sampleId: "",
-                  brand: "",
-                  model: "",
-                })
-              }
-            >
-              Cancel
-            </Button>
-            <Button
-              data-ocid="second_check.purchase_confirm_button"
-              className="bg-green-600 hover:bg-green-700 text-white"
-              onClick={handlePurchaseConfirm}
-            >
-              <ShoppingCart size={14} className="mr-1" />
-              Confirm Purchase
-            </Button>
-          </DialogFooter>
+          </DialogHeader>
+
+          <form onSubmit={handlePurchaseSubmit}>
+            <div className="grid grid-cols-3 gap-x-4 gap-y-4 mt-2">
+              {/* Row 1 */}
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Purchase Date</p>
+                <Input
+                  data-ocid="second_check_purchase.date.input"
+                  type="date"
+                  value={form.purchaseDate}
+                  onChange={(e) => setField("purchaseDate", e.target.value)}
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-700 mb-1">
+                  Purchase Mode
+                </p>
+                <Select
+                  value={form.purchaseMode}
+                  onValueChange={(v) => setField("purchaseMode", v)}
+                >
+                  <SelectTrigger
+                    data-ocid="second_check_purchase.mode.select"
+                    className={`h-9 text-sm font-medium ${
+                      isOnline
+                        ? "border-blue-400 ring-1 ring-blue-300 text-blue-700"
+                        : form.purchaseMode === "Offline"
+                          ? "border-green-400 ring-1 ring-green-300 text-green-700"
+                          : ""
+                    }`}
+                  >
+                    <SelectValue placeholder="Select Mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {purchaseModeOptions.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m === "Online" ? "🌐 Online" : "🏪 Offline"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Retailer Name</p>
+                <Input
+                  data-ocid="second_check_purchase.retailer.input"
+                  value={form.retailerName}
+                  onChange={(e) => setField("retailerName", e.target.value)}
+                  placeholder={
+                    isOnline
+                      ? "Enter online store / website"
+                      : "Enter retailer name"
+                  }
+                  className="h-9 text-sm"
+                />
+              </div>
+
+              {/* Row 2 */}
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Invoice Number</p>
+                <Input
+                  data-ocid="second_check_purchase.invoice_number.input"
+                  value={form.invoiceNumber}
+                  onChange={(e) => setField("invoiceNumber", e.target.value)}
+                  placeholder="1234567888"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Invoice Date</p>
+                <Input
+                  data-ocid="second_check_purchase.invoice_date.input"
+                  type="date"
+                  value={form.invoiceDate}
+                  onChange={(e) => setField("invoiceDate", e.target.value)}
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Appliance name</p>
+                <Select
+                  value={form.applianceName}
+                  onValueChange={(v) => setField("applianceName", v)}
+                >
+                  <SelectTrigger
+                    data-ocid="second_check_purchase.appliance_name.select"
+                    className="h-9 text-sm"
+                  >
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {applianceCategories.map((c) => (
+                      <SelectItem key={c.id} value={c.name}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Row 3 */}
+              <div>
+                <p className="text-xs text-gray-600 mb-1">
+                  Appliance brand name
+                </p>
+                <Input
+                  data-ocid="second_check_purchase.brand.input"
+                  value={form.applianceBrand}
+                  onChange={(e) => setField("applianceBrand", e.target.value)}
+                  placeholder="Samsung/Realme"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 mb-1">
+                  Appliance model number
+                </p>
+                <Input
+                  data-ocid="second_check_purchase.model.input"
+                  value={form.applianceModel}
+                  onChange={(e) => setField("applianceModel", e.target.value)}
+                  placeholder="Enter"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Quantity</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 whitespace-nowrap">
+                    1st test check
+                  </span>
+                  <Input
+                    data-ocid="second_check_purchase.qty1.input"
+                    type="number"
+                    value={form.qty1stTest}
+                    onChange={(e) => setField("qty1stTest", e.target.value)}
+                    className="h-9 text-sm w-14"
+                    min="0"
+                  />
+                  <span className="text-xs text-gray-500 whitespace-nowrap">
+                    2nd test check
+                  </span>
+                  <Input
+                    data-ocid="second_check_purchase.qty2.input"
+                    type="number"
+                    value={form.qty2ndTest}
+                    onChange={(e) => setField("qty2ndTest", e.target.value)}
+                    className="h-9 text-sm w-14"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              {/* Row 4 */}
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Invoice Amount</p>
+                <Input
+                  data-ocid="second_check_purchase.invoice_amount.input"
+                  type="number"
+                  value={form.invoiceAmount}
+                  onChange={(e) => setField("invoiceAmount", e.target.value)}
+                  placeholder="5,000"
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-gray-600 mb-1">
+                  Product star rating
+                </p>
+                <Input
+                  data-ocid="second_check_purchase.star_rating.input"
+                  value={form.productStarRating}
+                  onChange={(e) =>
+                    setField("productStarRating", e.target.value)
+                  }
+                  placeholder="star level ****"
+                  className="h-9 text-sm"
+                />
+              </div>
+
+              {!isOnline ? (
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">
+                    Transportation cost
+                  </p>
+                  <Input
+                    data-ocid="second_check_purchase.transport.input"
+                    type="number"
+                    value={form.transportationCost}
+                    onChange={(e) =>
+                      setField("transportationCost", e.target.value)
+                    }
+                    placeholder="0"
+                    className="h-9 text-sm"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-end">
+                  <p className="text-xs text-gray-400 italic">
+                    Transportation cost not applicable for online purchases
+                  </p>
+                </div>
+              )}
+
+              {!isOnline ? (
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">
+                    Manpower cost - TA/Handling
+                  </p>
+                  <Input
+                    data-ocid="second_check_purchase.manpower.input"
+                    type="number"
+                    value={form.manpowerCost}
+                    onChange={(e) => setField("manpowerCost", e.target.value)}
+                    placeholder="0"
+                    className="h-9 text-sm"
+                  />
+                </div>
+              ) : null}
+
+              {!isOnline ? (
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Insurance</p>
+                  <Input
+                    data-ocid="second_check_purchase.insurance.input"
+                    type="number"
+                    value={form.insurance}
+                    onChange={(e) => setField("insurance", e.target.value)}
+                    placeholder="0"
+                    className="h-9 text-sm bg-gray-50"
+                  />
+                </div>
+              ) : null}
+
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Total Amount</p>
+                <Input
+                  data-ocid="second_check_purchase.total.input"
+                  type="number"
+                  value={form.totalAmount}
+                  readOnly
+                  className="h-9 text-sm bg-gray-50 font-medium"
+                />
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Installment</p>
+                <Select
+                  value={form.installment}
+                  onValueChange={(v) => setField("installment", v)}
+                >
+                  <SelectTrigger
+                    data-ocid="second_check_purchase.installment.select"
+                    className="h-9 text-sm"
+                  >
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {installmentOptions.map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Lab Assignment — shows both Lab 1 and Lab 2 for 2nd check */}
+              <div className="col-span-2">
+                <p className="text-xs text-gray-600 mb-1">Lab Assignment</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Lab 1</p>
+                    {activeSample?.lab1Name ? (
+                      <div
+                        className="p-2.5 rounded-lg flex items-center gap-2"
+                        style={{
+                          backgroundColor: "#f0fdf4",
+                          border: "1px solid #bbf7d0",
+                        }}
+                        data-ocid="second_check_purchase.lab1.success_state"
+                      >
+                        <span className="text-green-600 text-sm">✓</span>
+                        <p className="text-xs font-semibold text-green-800">
+                          {activeSample.lab1Name}
+                        </p>
+                      </div>
+                    ) : (
+                      <div data-ocid="second_check_purchase.lab1.loading_state">
+                        <Input
+                          disabled
+                          placeholder="Awaiting Lab Coordinator Assignment"
+                          className="h-9 text-sm bg-gray-50 text-gray-400"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Lab 2</p>
+                    {activeSample?.lab2Name ? (
+                      <div
+                        className="p-2.5 rounded-lg flex items-center gap-2"
+                        style={{
+                          backgroundColor: "#f0fdf4",
+                          border: "1px solid #bbf7d0",
+                        }}
+                        data-ocid="second_check_purchase.lab2.success_state"
+                      >
+                        <span className="text-green-600 text-sm">✓</span>
+                        <p className="text-xs font-semibold text-green-800">
+                          {activeSample.lab2Name}
+                        </p>
+                      </div>
+                    ) : (
+                      <div data-ocid="second_check_purchase.lab2.loading_state">
+                        <Input
+                          disabled
+                          placeholder="Awaiting Lab Coordinator Assignment"
+                          className="h-9 text-sm bg-gray-50 text-gray-400"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  ⏳ Lab information is auto-filled once Lab Coordinator assigns
+                  both labs.
+                </p>
+              </div>
+
+              {/* Invoice file */}
+              <div>
+                <p className="text-xs text-gray-600 mb-1">Invoice</p>
+                <div className="relative">
+                  <Input
+                    data-ocid="second_check_purchase.invoice_file.input"
+                    readOnly
+                    value={invoiceFileName}
+                    placeholder="Choose...."
+                    className="h-9 text-sm pr-10 cursor-pointer"
+                    onClick={() =>
+                      document
+                        .getElementById("invoiceFileInput2ndCheck")
+                        ?.click()
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() =>
+                      document
+                        .getElementById("invoiceFileInput2ndCheck")
+                        ?.click()
+                    }
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      role="img"
+                      aria-label="Attach file"
+                    >
+                      <title>Attach file</title>
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                    </svg>
+                  </button>
+                  <input
+                    id="invoiceFileInput2ndCheck"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {isOnline && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-xs text-blue-700 font-medium">
+                  ℹ️ Online Purchase Mode: Transportation cost, Manpower cost
+                  (TA/Handling), and Insurance fields are not applicable and
+                  have been hidden.
+                </p>
+              </div>
+            )}
+
+            <DialogFooter className="mt-6 gap-2">
+              <Button
+                data-ocid="second_check_purchase.cancel.cancel_button"
+                type="button"
+                variant="outline"
+                className="border-red-500 text-red-600 hover:bg-red-50"
+                onClick={closePurchaseDialog}
+              >
+                Cancel
+              </Button>
+              <Button
+                data-ocid="second_check_purchase.submit.submit_button"
+                type="submit"
+                className="bg-green-700 hover:bg-green-800 text-white px-8"
+              >
+                Submit
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
