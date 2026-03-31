@@ -497,166 +497,1012 @@ function SummaryPage({ selectedState }: { selectedState: string }) {
 }
 
 // ─── Bill Wise Details ────────────────────────────────────────────────────────
-const allBillData = [
+interface BillRow {
+  phase: string;
+  date: string;
+  shopName: string;
+  invoiceNo: string;
+  invoiceDate: string;
+  appliance: string;
+  brand: string;
+  modelNo: string;
+  qty: number;
+  invoiceValue: number;
+  courierCharges: number;
+  loading: number;
+  vehicleCharges: number;
+  transportation: number;
+  others: number;
+  state: string;
+}
+
+const allBillData: BillRow[] = [
   {
-    no: "BL-2024-001",
-    date: "02 Apr 2024",
-    state: "Rajasthan",
-    desc: "AC Testing Charges Q1",
-    amount: 425000,
-    status: "Paid",
+    phase: "1st Phase",
+    date: "07/09/2024",
+    shopName: "Datamation",
+    invoiceNo: "D/2425/6277",
+    invoiceDate: "07/09/2024",
+    appliance: "Frost Free Refrigerators",
+    brand: "LG",
+    modelNo: "GL-T342TPZY",
+    qty: 1,
+    invoiceValue: 38000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
   },
   {
-    no: "BL-2024-002",
-    date: "08 Apr 2024",
+    phase: "1st Phase",
+    date: "07/09/2024",
+    shopName: "New Star Freeze",
+    invoiceNo: "NFS/2024-25/1271",
+    invoiceDate: "07/09/2024",
+    appliance: "Direct Cool Refrigerators",
+    brand: "IFB",
+    modelNo: "IFBDC-2232FSS",
+    qty: 1,
+    invoiceValue: 16000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "07/09/2024",
+    shopName: "New Star Freeze",
+    invoiceNo: "NFS/2024-25/1271",
+    invoiceDate: "07/09/2024",
+    appliance: "Frost Free Refrigerators",
+    brand: "GODREJ",
+    modelNo: "RT EONVIBE 366B",
+    qty: 1,
+    invoiceValue: 36000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "07/09/2024",
+    shopName: "Smart Hub",
+    invoiceNo: "SH/24-25/2613",
+    invoiceDate: "07/09/2024",
+    appliance: "Ceiling Fan",
+    brand: "Havells",
+    modelNo: "Stealth Neo",
+    qty: 1,
+    invoiceValue: 7370,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "20/09/2024",
+    shopName: "Next Digital Home",
+    invoiceNo: "NDHB2B24-25/0470",
+    invoiceDate: "20/09/2024",
+    appliance: "Room Air Conditioner (Variable Speed)",
+    brand: "Daikin",
+    modelNo: "FCVFQ71AV16+RZVFC",
+    qty: 1,
+    invoiceValue: 83000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "20/09/2024",
+    shopName: "Next Digital Home",
+    invoiceNo: "NDHB2B24-25/0470",
+    invoiceDate: "20/09/2024",
+    appliance: "Room Air Conditioner (Fixed Speed)",
+    brand: "Daikin",
+    modelNo: "FCQF18ARV16+RGVF1",
+    qty: 1,
+    invoiceValue: 71900,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "20/09/2024",
+    shopName: "Next Digital Home",
+    invoiceNo: "NDHB2B24-25/0470",
+    invoiceDate: "20/09/2024",
+    appliance: "Stationary Storage Type Electric Water Heater",
+    brand: "Racold",
+    modelNo: "CDR Dtx 15H",
+    qty: 1,
+    invoiceValue: 9000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 1000,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "03/10/2024",
+    shopName: "SB Service",
+    invoiceNo: "SB/2024/1003",
+    invoiceDate: "03/10/2024",
+    appliance: "None",
+    brand: "",
+    modelNo: "",
+    qty: 0,
+    invoiceValue: 0,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 89675,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "24/10/2024",
+    shopName: "SB Service",
+    invoiceNo: "SB/2024/102",
+    invoiceDate: "24/10/2024",
+    appliance: "None",
+    brand: "",
+    modelNo: "",
+    qty: 0,
+    invoiceValue: 0,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 27682,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "24/10/2024",
+    shopName: "Ginoria Trading Co.",
+    invoiceNo: "359 & 859",
+    invoiceDate: "24/10/2024",
+    appliance: "Direct Cool Refrigerators",
+    brand: "HAIER",
+    modelNo: "HRD-1861",
+    qty: 1,
+    invoiceValue: 13000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "24/10/2024",
+    shopName: "Ginoria Trading Co.",
+    invoiceNo: "359 & 859",
+    invoiceDate: "24/10/2024",
+    appliance: "Frost Free Refrigerators",
+    brand: "LG",
+    modelNo: "GL-S342SPZY",
+    qty: 1,
+    invoiceValue: 38000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "24/10/2024",
+    shopName: "Ginoria Trading Co.",
+    invoiceNo: "359 & 859",
+    invoiceDate: "24/10/2024",
+    appliance: "Room Air Conditioner (Variable Speed)",
+    brand: "LLOYD",
+    modelNo: "GLS18HSFWRHC",
+    qty: 1,
+    invoiceValue: 82500,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "24/10/2024",
+    shopName: "Ginoria Trading Co.",
+    invoiceNo: "359 & 859",
+    invoiceDate: "24/10/2024",
+    appliance: "Direct Cool Refrigerators",
+    brand: "Voltas",
+    modelNo: "RDC220E",
+    qty: 1,
+    invoiceValue: 19500,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "24/10/2024",
+    shopName: "Ginoria Trading Co.",
+    invoiceNo: "359 & 859",
+    invoiceDate: "24/10/2024",
+    appliance: "Ceiling Fan",
+    brand: "Usha",
+    modelNo: "Supra",
+    qty: 1,
+    invoiceValue: 2500,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "24/10/2024",
+    shopName: "Ginoria Trading Co.",
+    invoiceNo: "359 & 859",
+    invoiceDate: "24/10/2024",
+    appliance: "Direct Cool Refrigerators",
+    brand: "Kelvinator",
+    modelNo: "KRD-A210DBP",
+    qty: 1,
+    invoiceValue: 18000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "18/11/2024",
+    shopName: "Visit Charges for the procure",
+    invoiceNo: "Visit Charges",
+    invoiceDate: "18/11/2024",
+    appliance: "None",
+    brand: "",
+    modelNo: "",
+    qty: 0,
+    invoiceValue: 0,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "18/11/2024",
+    shopName: "Visit Charges for the procure",
+    invoiceNo: "Visit Charges",
+    invoiceDate: "18/11/2024",
+    appliance: "None",
+    brand: "",
+    modelNo: "",
+    qty: 0,
+    invoiceValue: 0,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "27/11/2024",
+    shopName: "SB Service",
+    invoiceNo: "SB/2024/1112",
+    invoiceDate: "27/11/2024",
+    appliance: "None",
+    brand: "",
+    modelNo: "",
+    qty: 0,
+    invoiceValue: 0,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 123605,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "1st Phase",
+    date: "27/11/2024",
+    shopName: "SB Service",
+    invoiceNo: "SB20241107",
+    invoiceDate: "27/11/2024",
+    appliance: "None",
+    brand: "",
+    modelNo: "",
+    qty: 0,
+    invoiceValue: 0,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 16101,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "28/05/2025",
+    shopName: "Ginoria Trading Co.",
+    invoiceNo: "152",
+    invoiceDate: "28/05/2025",
+    appliance: "Ceiling Fan",
+    brand: "Bajaj",
+    modelNo: "CHETAK HS EEC 1200T",
+    qty: 1,
+    invoiceValue: 2550,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "28/05/2025",
+    shopName: "Ginoria Trading Co.",
+    invoiceNo: "152",
+    invoiceDate: "28/05/2025",
+    appliance: "Ceiling Fan",
+    brand: "USHA",
+    modelNo: "SWIFT 1200MM",
+    qty: 1,
+    invoiceValue: 2350,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "28/05/2025",
+    shopName: "Ginoria Trading Co.",
+    invoiceNo: "152",
+    invoiceDate: "28/05/2025",
+    appliance: "Direct Cool Refrigerators",
+    brand: "GODREJ",
+    modelNo: "E MARVEL 207E 184LT",
+    qty: 1,
+    invoiceValue: 22000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "28/05/2025",
+    shopName: "Ginoria Trading Co.",
+    invoiceNo: "152",
+    invoiceDate: "28/05/2025",
+    appliance: "Stationary Storage Type Electric Water Heater",
+    brand: "BAJAJ",
+    modelNo: "SHIELD IMMORTO 15",
+    qty: 1,
+    invoiceValue: 10000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "03/06/2025",
+    shopName: "SB Service",
+    invoiceNo: "SB20250503",
+    invoiceDate: "03/06/2025",
+    appliance: "None",
+    brand: "",
+    modelNo: "",
+    qty: 0,
+    invoiceValue: 0,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 45668,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "04/06/2025",
+    shopName: "Kanoi Electronics",
+    invoiceNo: "KES/25-26/051",
+    invoiceDate: "04/06/2025",
+    appliance: "Washing Machine (Semi/Top Load/Front Load)",
+    brand: "VOLTAS",
+    modelNo: "WTT75DBLT(SEMI-AU",
+    qty: 1,
+    invoiceValue: 16000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "04/06/2025",
+    shopName: "Kanoi Electronics",
+    invoiceNo: "KES/25-26/051",
+    invoiceDate: "04/06/2025",
+    appliance: "Room Air Conditioner (Variable Speed)",
+    brand: "IFB",
+    modelNo: "CI183GD22ZRGN1(1.5 TC",
+    qty: 1,
+    invoiceValue: 40000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "04/06/2025",
+    shopName: "Kanoi Electronics",
+    invoiceNo: "KES/25-26/051",
+    invoiceDate: "04/06/2025",
+    appliance: "Direct Cool Refrigerators",
+    brand: "IFB",
+    modelNo: "2233FLG(197LTR)",
+    qty: 1,
+    invoiceValue: 23000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "06/06/2025",
+    shopName: "Kaya Digital",
+    invoiceNo: "KD/2025-26/56",
+    invoiceDate: "06/06/2025",
+    appliance: "Room Air Conditioner (Fixed Speed)",
+    brand: "Godrej",
+    modelNo: "SFC18STC3 WYP",
+    qty: 1,
+    invoiceValue: 41000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "06/06/2025",
+    shopName: "Kaya Digital",
+    invoiceNo: "KD/2025-26/56",
+    invoiceDate: "06/06/2025",
+    appliance: "Frost Free Refrigerators",
+    brand: "SAMSUNG",
+    modelNo: "RT28C31429U/HL",
+    qty: 1,
+    invoiceValue: 36000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "06/06/2025",
+    shopName: "Kaya Digital",
+    invoiceNo: "KD/2025-26/56",
+    invoiceDate: "06/06/2025",
+    appliance: "Washing Machine (Semi/Top Load/Front Load)",
+    brand: "BOSCH",
+    modelNo: "WJZ351W0IN (7.5KG)",
+    qty: 1,
+    invoiceValue: 16000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "06/06/2025",
+    shopName: "Kaya Digital",
+    invoiceNo: "KD/2025-26/56",
+    invoiceDate: "06/06/2025",
+    appliance: "Room Air Conditioner (Variable Speed)",
+    brand: "HISENSE",
+    modelNo: "AS-18TR4R3AK1",
+    qty: 1,
+    invoiceValue: 37000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "06/06/2025",
+    shopName: "Kaya Digital",
+    invoiceNo: "KD/2025-26/56",
+    invoiceDate: "06/06/2025",
+    appliance: "Room Air Conditioner (Variable Speed)",
+    brand: "GODREJ",
+    modelNo: "SIC-18DTC3WYA",
+    qty: 1,
+    invoiceValue: 39500,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  {
+    phase: "2nd Phase",
+    date: "10/06/2025",
+    shopName: "Raj Electric Company",
+    invoiceNo: "201",
+    invoiceDate: "10/06/2025",
+    appliance: "Ceiling Fan",
+    brand: "CG",
+    modelNo: "CG Hyperair Neo",
+    qty: 1,
+    invoiceValue: 1400,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 0,
+    others: 0,
+    state: "Assam",
+  },
+  // Other states data
+  {
+    phase: "1st Phase",
+    date: "05/04/2024",
+    shopName: "Delhi Electronics Hub",
+    invoiceNo: "DEH/2024/001",
+    invoiceDate: "05/04/2024",
+    appliance: "Air Conditioner (Fixed Speed)",
+    brand: "Voltas",
+    modelNo: "185V-CZQ",
+    qty: 1,
+    invoiceValue: 32000,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 2500,
+    others: 0,
+    state: "Delhi",
+  },
+  {
+    phase: "1st Phase",
+    date: "10/04/2024",
+    shopName: "Modern Appliances",
+    invoiceNo: "MA/2024/102",
+    invoiceDate: "10/04/2024",
+    appliance: "Washing Machine",
+    brand: "LG",
+    modelNo: "FHM1207SDU",
+    qty: 1,
+    invoiceValue: 28500,
+    courierCharges: 0,
+    loading: 0,
+    vehicleCharges: 0,
+    transportation: 1800,
+    others: 0,
     state: "Maharashtra",
-    desc: "Refrigerator Lab Setup",
-    amount: 850000,
-    status: "Paid",
   },
   {
-    no: "BL-2024-003",
-    date: "15 Apr 2024",
-    state: "Delhi",
-    desc: "LED Bulb Testing — Batch 4",
-    amount: 195000,
-    status: "Paid",
-  },
-  {
-    no: "BL-2024-004",
-    date: "22 Apr 2024",
-    state: "Gujarat",
-    desc: "Washing Machine Compliance",
-    amount: 610000,
-    status: "Pending",
-  },
-  {
-    no: "BL-2024-005",
-    date: "01 May 2024",
-    state: "Uttar Pradesh",
-    desc: "Fan Testing Charges",
-    amount: 320000,
-    status: "Paid",
-  },
-  {
-    no: "BL-2024-006",
-    date: "10 May 2024",
-    state: "Haryana",
-    desc: "Water Heater Inspection",
-    amount: 275000,
-    status: "Under Review",
-  },
-  {
-    no: "BL-2024-007",
-    date: "18 May 2024",
-    state: "Tamil Nadu",
-    desc: "AC Testing Charges Q2",
-    amount: 490000,
-    status: "Paid",
-  },
-  {
-    no: "BL-2024-008",
-    date: "25 May 2024",
-    state: "Karnataka",
-    desc: "Microwave Oven Testing",
-    amount: 385000,
-    status: "Pending",
-  },
-  {
-    no: "BL-2024-009",
-    date: "03 Jun 2024",
-    state: "West Bengal",
-    desc: "Ceiling Fan Batch Testing",
-    amount: 210000,
-    status: "Paid",
-  },
-  {
-    no: "BL-2024-010",
-    date: "12 Jun 2024",
-    state: "Madhya Pradesh",
-    desc: "Refrigerator Q2 Audit",
-    amount: 560000,
-    status: "Under Review",
-  },
-  {
-    no: "BL-2024-011",
-    date: "20 Jun 2024",
+    phase: "2nd Phase",
+    date: "12/05/2025",
+    shopName: "Raj Electricals",
+    invoiceNo: "RE/2025/210",
+    invoiceDate: "12/05/2025",
+    appliance: "Refrigerator",
+    brand: "Whirlpool",
+    modelNo: "IF305ELDSS3",
+    qty: 1,
+    invoiceValue: 42000,
+    courierCharges: 0,
+    loading: 500,
+    vehicleCharges: 0,
+    transportation: 3200,
+    others: 0,
     state: "Rajasthan",
-    desc: "Personnel Travel Expenses",
-    amount: 145000,
-    status: "Paid",
+  },
+];
+
+// Installment-wise summary for Bill Wise Details
+interface InstallmentSummary {
+  installment: string;
+  invoiceValue: number;
+  totalCharges: number;
+  totalAmount: number;
+  state: string;
+}
+
+const installmentSummaryData: InstallmentSummary[] = [
+  {
+    installment: "1st Installment",
+    invoiceValue: 434770,
+    totalCharges: 318063,
+    totalAmount: 752833,
+    state: "Assam",
   },
   {
-    no: "BL-2024-012",
-    date: "28 Jun 2024",
+    installment: "2nd Installment",
+    invoiceValue: 390190,
+    totalCharges: 418204,
+    totalAmount: 808394,
+    state: "Assam",
+  },
+  {
+    installment: "3rd Installment",
+    invoiceValue: 599200,
+    totalCharges: 206858,
+    totalAmount: 806058,
+    state: "Assam",
+  },
+  {
+    installment: "4th Installment",
+    invoiceValue: 0,
+    totalCharges: 0,
+    totalAmount: 0,
+    state: "Assam",
+  },
+  {
+    installment: "1st Installment",
+    invoiceValue: 280000,
+    totalCharges: 45000,
+    totalAmount: 325000,
     state: "Delhi",
-    desc: "Equipment Calibration Charges",
-    amount: 325000,
-    status: "Pending",
+  },
+  {
+    installment: "2nd Installment",
+    invoiceValue: 195000,
+    totalCharges: 32000,
+    totalAmount: 227000,
+    state: "Delhi",
+  },
+  {
+    installment: "1st Installment",
+    invoiceValue: 560000,
+    totalCharges: 78000,
+    totalAmount: 638000,
+    state: "Maharashtra",
+  },
+  {
+    installment: "2nd Installment",
+    invoiceValue: 420000,
+    totalCharges: 56000,
+    totalAmount: 476000,
+    state: "Maharashtra",
+  },
+  {
+    installment: "1st Installment",
+    invoiceValue: 380000,
+    totalCharges: 52000,
+    totalAmount: 432000,
+    state: "Rajasthan",
   },
 ];
 
 function BillWisePage({ selectedState }: { selectedState: string }) {
+  const [phaseFilter, setPhaseFilter] = useState("All");
   const data =
     selectedState === "All States"
       ? allBillData
       : allBillData.filter((r) => r.state === selectedState);
+  const filtered =
+    phaseFilter === "All" ? data : data.filter((r) => r.phase === phaseFilter);
+
+  const instData =
+    selectedState === "All States"
+      ? installmentSummaryData
+      : installmentSummaryData.filter((r) => r.state === selectedState);
+
+  const totInvoice = filtered.reduce((a, r) => a + r.invoiceValue, 0);
+  const totCourier = filtered.reduce((a, r) => a + r.courierCharges, 0);
+  const totLoading = filtered.reduce((a, r) => a + r.loading, 0);
+  const totVehicle = filtered.reduce((a, r) => a + r.vehicleCharges, 0);
+  const totTransport = filtered.reduce((a, r) => a + r.transportation, 0);
+  const totOthers = filtered.reduce((a, r) => a + r.others, 0);
+  const totQty = filtered.reduce((a, r) => a + r.qty, 0);
+
+  const grandInstInvoice = instData.reduce((a, r) => a + r.invoiceValue, 0);
+  const grandInstCharges = instData.reduce((a, r) => a + r.totalCharges, 0);
+  const grandInstTotal = instData.reduce((a, r) => a + r.totalAmount, 0);
+
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold text-gray-700">
-          Bill Wise Details
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-blue-50">
-              {[
-                "Bill No",
-                "Bill Date",
-                "State",
-                "Description",
-                "Amount (₹)",
-                "Status",
-              ].map((h) => (
-                <TableHead
-                  key={h}
-                  className="text-xs font-semibold text-gray-600"
-                >
-                  {h}
+    <div className="space-y-4">
+      {/* Phase Filter */}
+      <div className="flex items-center gap-3 mb-2">
+        <span className="text-xs font-semibold text-gray-600">Phase:</span>
+        {["All", "1st Phase", "2nd Phase"].map((p) => (
+          <button
+            type="button"
+            key={p}
+            onClick={() => setPhaseFilter(p)}
+            className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${phaseFilter === p ? "bg-blue-700 text-white border-blue-700" : "bg-white text-gray-600 border-gray-300 hover:bg-blue-50"}`}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+
+      {/* Main Bill Wise Table */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold text-gray-700">
+            Bill Wise Details{" "}
+            {selectedState !== "All States" ? `— ${selectedState}` : ""}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-blue-800 text-white">
+                  <TableHead className="text-xs font-semibold text-white whitespace-nowrap">
+                    Phase
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white whitespace-nowrap">
+                    Dates
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white whitespace-nowrap">
+                    Shopkeep Name
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white whitespace-nowrap">
+                    Invoice No
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white whitespace-nowrap">
+                    Invoice Date
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white whitespace-nowrap">
+                    Appliance Name
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white whitespace-nowrap">
+                    Brand
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white whitespace-nowrap">
+                    Appliance Model No
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white text-right whitespace-nowrap">
+                    Qty
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white text-right whitespace-nowrap">
+                    Invoice Value
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white text-right whitespace-nowrap">
+                    Courier Charges
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white text-right whitespace-nowrap">
+                    Loading
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white text-right whitespace-nowrap">
+                    Vehicle Charges
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white text-right whitespace-nowrap">
+                    Transportation
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-white text-right whitespace-nowrap">
+                    Others
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((r, i) => (
+                  <TableRow
+                    key={`bill-${i}-${r.invoiceNo}`}
+                    className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}
+                  >
+                    <TableCell className="text-xs text-gray-700 whitespace-nowrap">
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-xs font-medium ${r.phase === "1st Phase" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}
+                      >
+                        {r.phase}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-600 whitespace-nowrap">
+                      {r.date}
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-700 whitespace-nowrap max-w-[140px] truncate">
+                      {r.shopName}
+                    </TableCell>
+                    <TableCell className="text-xs font-mono text-blue-700 whitespace-nowrap">
+                      {r.invoiceNo}
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-600 whitespace-nowrap">
+                      {r.invoiceDate}
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-700 max-w-[180px] truncate">
+                      {r.appliance || "—"}
+                    </TableCell>
+                    <TableCell className="text-xs font-medium text-gray-800 whitespace-nowrap">
+                      {r.brand || "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-gray-700 whitespace-nowrap">
+                      {r.modelNo || "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-right text-gray-700">
+                      {r.qty > 0 ? r.qty : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-right font-medium text-gray-800">
+                      {r.invoiceValue > 0 ? fmt(r.invoiceValue) : "0.00"}
+                    </TableCell>
+                    <TableCell className="text-xs text-right text-gray-600">
+                      {r.courierCharges > 0 ? fmt(r.courierCharges) : "0.00"}
+                    </TableCell>
+                    <TableCell className="text-xs text-right text-gray-600">
+                      {r.loading > 0 ? fmt(r.loading) : "0.00"}
+                    </TableCell>
+                    <TableCell className="text-xs text-right text-gray-600">
+                      {r.vehicleCharges > 0 ? fmt(r.vehicleCharges) : "0.00"}
+                    </TableCell>
+                    <TableCell className="text-xs text-right text-gray-600">
+                      {r.transportation > 0 ? fmt(r.transportation) : "0.00"}
+                    </TableCell>
+                    <TableCell className="text-xs text-right text-gray-600">
+                      {r.others > 0 ? fmt(r.others) : "0.00"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {/* Total Row */}
+                <TableRow className="bg-blue-100 font-bold">
+                  <TableCell
+                    colSpan={8}
+                    className="text-xs font-bold text-gray-800 text-right"
+                  >
+                    Total
+                  </TableCell>
+                  <TableCell className="text-xs font-bold text-right text-gray-800">
+                    {totQty}
+                  </TableCell>
+                  <TableCell className="text-xs font-bold text-right text-gray-800">
+                    {fmt(totInvoice)}
+                  </TableCell>
+                  <TableCell className="text-xs font-bold text-right text-gray-800">
+                    {fmt(totCourier)}
+                  </TableCell>
+                  <TableCell className="text-xs font-bold text-right text-gray-800">
+                    {fmt(totLoading)}
+                  </TableCell>
+                  <TableCell className="text-xs font-bold text-right text-gray-800">
+                    {fmt(totVehicle)}
+                  </TableCell>
+                  <TableCell className="text-xs font-bold text-right text-gray-800">
+                    {fmt(totTransport)}
+                  </TableCell>
+                  <TableCell className="text-xs font-bold text-right text-gray-800">
+                    {fmt(totOthers)}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Installment Wise Summary */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold text-gray-700">
+            Installment Wise Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-blue-800">
+                <TableHead className="text-xs font-semibold text-white">
+                  Installment
                 </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((r, i) => (
-              <TableRow
-                key={r.no}
-                className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
-              >
-                <TableCell className="text-xs font-mono text-blue-700">
-                  {r.no}
-                </TableCell>
-                <TableCell className="text-xs text-gray-600">
-                  {r.date}
-                </TableCell>
-                <TableCell className="text-xs text-gray-700">
-                  {r.state}
-                </TableCell>
-                <TableCell className="text-xs text-gray-700">
-                  {r.desc}
-                </TableCell>
-                <TableCell className="text-xs font-semibold text-gray-800">
-                  {fmt(r.amount)}
-                </TableCell>
-                <TableCell>{statusBadge(r.status)}</TableCell>
+                <TableHead className="text-xs font-semibold text-white text-right">
+                  Invoice Value
+                </TableHead>
+                <TableHead className="text-xs font-semibold text-white text-right">
+                  Total Charges
+                </TableHead>
+                <TableHead className="text-xs font-semibold text-white text-right">
+                  Total Amount
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {instData.map((r, i) => (
+                <TableRow
+                  key={`inst-${i}-${r.installment}`}
+                  className={i % 2 === 0 ? "bg-white" : "bg-blue-50"}
+                >
+                  <TableCell className="text-xs text-gray-700 font-medium">
+                    {r.installment}
+                  </TableCell>
+                  <TableCell className="text-xs text-right text-gray-700">
+                    {fmt(r.invoiceValue)}
+                  </TableCell>
+                  <TableCell className="text-xs text-right text-gray-700">
+                    {fmt(r.totalCharges)}
+                  </TableCell>
+                  <TableCell className="text-xs text-right font-semibold text-gray-800">
+                    {fmt(r.totalAmount)}
+                  </TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="bg-blue-100 font-bold">
+                <TableCell className="text-xs font-bold text-gray-800">
+                  Grand Total
+                </TableCell>
+                <TableCell className="text-xs font-bold text-right text-gray-800">
+                  {fmt(grandInstInvoice)}
+                </TableCell>
+                <TableCell className="text-xs font-bold text-right text-gray-800">
+                  {fmt(grandInstCharges)}
+                </TableCell>
+                <TableCell className="text-xs font-bold text-right text-gray-800">
+                  {fmt(grandInstTotal)}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
