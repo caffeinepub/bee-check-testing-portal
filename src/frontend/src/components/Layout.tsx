@@ -181,6 +181,28 @@ const finStateSubItems = [
   { label: "Brand Wise", page: "fin_brand" },
 ];
 
+const finBeeSubItems = [
+  { label: "Summary", page: "bee_summary" },
+  { label: "Bill Wise Details", page: "bee_bill" },
+  { label: "Appliance Wise", page: "bee_appliance" },
+  { label: "Expenses Head", page: "bee_expenses" },
+  { label: "Invoice Data", page: "bee_invoice" },
+  { label: "Lab Wise", page: "bee_lab" },
+  { label: "Vendor Wise", page: "bee_vendor" },
+  { label: "Brand Wise", page: "bee_brand" },
+];
+
+const finLabSubItems = [
+  { label: "Summary", page: "lab_summary" },
+  { label: "Bill Wise Details", page: "lab_bill" },
+  { label: "Appliance Wise", page: "lab_appliance" },
+  { label: "Expenses Head", page: "lab_expenses" },
+  { label: "Invoice Data", page: "lab_invoice" },
+  { label: "Lab Wise", page: "lab_lab" },
+  { label: "Vendor Wise", page: "lab_vendor" },
+  { label: "Brand Wise", page: "lab_brand" },
+];
+
 const ROLE_LABELS: Record<string, string> = {
   director: "BEE Director",
   official: "BEE Official",
@@ -211,6 +233,15 @@ export default function Layout({
   const { user, logout } = useAuth();
   const { blockedSamples } = useBlockedSamples();
   const [expandedSection, setExpandedSection] = useState<string>("State");
+
+  // Sync expandedSection when navigating via external links
+  if (activePage.startsWith("bee_") && expandedSection !== "BEE") {
+    setExpandedSection("BEE");
+  } else if (activePage.startsWith("lab_") && expandedSection !== "LAB") {
+    setExpandedSection("LAB");
+  } else if (activePage.startsWith("fin_") && expandedSection !== "State") {
+    setExpandedSection("State");
+  }
 
   if (!user) return null;
   const items = navItems[user.role] || [];
@@ -338,10 +369,30 @@ export default function Layout({
                     className="ml-3 mt-1 border-l-2 pl-3"
                     style={{ borderColor: `${accent}40` }}
                   >
-                    <div className="px-3 py-3 text-xs text-blue-400 italic">
-                      🔜 Coming Soon — BEE financial data will be available in
-                      the next release.
-                    </div>
+                    {finBeeSubItems.map((sub) => {
+                      const isActive = activePage === sub.page;
+                      return (
+                        <button
+                          key={sub.page}
+                          type="button"
+                          data-ocid={`fin.${sub.page}_link`}
+                          onClick={() => onNavigate(sub.page)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg mb-0.5 text-xs transition-all duration-150 ${
+                            isActive
+                              ? "text-white font-semibold"
+                              : "text-blue-300 hover:bg-white/10 hover:text-white"
+                          }`}
+                          style={
+                            isActive
+                              ? { backgroundColor: accent, color: "#1a3a6b" }
+                              : {}
+                          }
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
+                          {sub.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -368,10 +419,30 @@ export default function Layout({
                     className="ml-3 mt-1 border-l-2 pl-3"
                     style={{ borderColor: `${accent}40` }}
                   >
-                    <div className="px-3 py-3 text-xs text-blue-400 italic">
-                      🔜 Coming Soon — LAB financial data will be available in
-                      the next release.
-                    </div>
+                    {finLabSubItems.map((sub) => {
+                      const isActive = activePage === sub.page;
+                      return (
+                        <button
+                          key={sub.page}
+                          type="button"
+                          data-ocid={`fin.${sub.page}_link`}
+                          onClick={() => onNavigate(sub.page)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg mb-0.5 text-xs transition-all duration-150 ${
+                            isActive
+                              ? "text-white font-semibold"
+                              : "text-blue-300 hover:bg-white/10 hover:text-white"
+                          }`}
+                          style={
+                            isActive
+                              ? { backgroundColor: accent, color: "#1a3a6b" }
+                              : {}
+                          }
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
+                          {sub.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
