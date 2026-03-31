@@ -4,6 +4,7 @@ import {
   Bell,
   CalendarCheck,
   CheckCircle,
+  ChevronDown,
   ChevronRight,
   ClipboardList,
   Database,
@@ -24,6 +25,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useBlockedSamples } from "../contexts/BlockedSamplesContext";
 
@@ -167,6 +169,18 @@ const navItems: Record<
   ],
 };
 
+// Financial Official accordion nav structure
+const finStateSubItems = [
+  { label: "Summary", page: "fin_summary" },
+  { label: "Bill Wise Details", page: "fin_bill" },
+  { label: "Appliance Wise", page: "fin_appliance" },
+  { label: "Expenses Head", page: "fin_expenses" },
+  { label: "Invoice Data", page: "fin_invoice" },
+  { label: "Lab Wise", page: "fin_lab" },
+  { label: "Vendor Wise", page: "fin_vendor" },
+  { label: "Brand Wise", page: "fin_brand" },
+];
+
 const ROLE_LABELS: Record<string, string> = {
   director: "BEE Director",
   official: "BEE Official",
@@ -174,6 +188,7 @@ const ROLE_LABELS: Record<string, string> = {
   lab: "Test Laboratory",
   labcoordinator: "Lab Coordinator",
   complianceofficer: "Compliance Officer",
+  financialofficial: "Financial Official",
 };
 
 const ROLE_ACCENT: Record<string, string> = {
@@ -183,6 +198,7 @@ const ROLE_ACCENT: Record<string, string> = {
   lab: "#8b5cf6",
   labcoordinator: "#06b6d4",
   complianceofficer: "#ef4444",
+  financialofficial: "#ea580c",
 };
 
 const BEE_LOGO = "/assets/generated/bee_logo_transparent.png";
@@ -194,6 +210,7 @@ export default function Layout({
 }: LayoutProps) {
   const { user, logout } = useAuth();
   const { blockedSamples } = useBlockedSamples();
+  const [expandedSection, setExpandedSection] = useState<string>("State");
 
   if (!user) return null;
   const items = navItems[user.role] || [];
@@ -205,6 +222,10 @@ export default function Layout({
       ? blockedSamples.filter((s) => !s.labAssignment).length
       : 0;
 
+  const toggleSection = (section: string) => {
+    setExpandedSection((prev) => (prev === section ? "" : section));
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
@@ -215,7 +236,7 @@ export default function Layout({
             "linear-gradient(180deg, #0d2252 0%, #1a3a6b 60%, #1e4080 100%)",
         }}
       >
-        {/* Logo area — full logo with baked-in text */}
+        {/* Logo area */}
         <div
           className="flex flex-col items-center px-3 py-3 border-b"
           style={{ borderColor: "rgba(200,169,81,0.3)" }}
@@ -242,38 +263,156 @@ export default function Layout({
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          {items.map((item) => {
-            const isActive = activePage === item.page;
-            return (
-              <button
-                key={item.page + item.label}
-                type="button"
-                data-ocid={`nav.${item.page}_link`}
-                onClick={() => onNavigate(item.page)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm transition-all duration-150 sidebar-nav-item ${
-                  isActive
-                    ? "sidebar-nav-active text-white font-semibold"
-                    : "text-blue-200 hover:bg-white/10 hover:text-white"
-                }`}
-                style={
-                  isActive ? { backgroundColor: accent, color: "#1a3a6b" } : {}
-                }
-              >
-                <span className={isActive ? "text-[#1a3a6b]" : ""}>
-                  {item.icon}
-                </span>
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.page === "assignlab" && pendingCount > 0 && (
-                  <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
-                    {pendingCount}
+          {user.role === "financialofficial" ? (
+            // Special accordion nav for Financial Official
+            <>
+              {/* State Section */}
+              <div className="mb-1">
+                <button
+                  type="button"
+                  data-ocid="fin.state.tab"
+                  onClick={() => toggleSection("State")}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-blue-200 hover:bg-white/10 hover:text-white"
+                  style={expandedSection === "State" ? { color: accent } : {}}
+                >
+                  <MapIcon size={18} />
+                  <span className="flex-1 text-left font-semibold">State</span>
+                  {expandedSection === "State" ? (
+                    <ChevronDown size={14} />
+                  ) : (
+                    <ChevronRight size={14} />
+                  )}
+                </button>
+                {expandedSection === "State" && (
+                  <div
+                    className="ml-3 mt-1 border-l-2 pl-3"
+                    style={{ borderColor: `${accent}40` }}
+                  >
+                    {finStateSubItems.map((sub) => {
+                      const isActive = activePage === sub.page;
+                      return (
+                        <button
+                          key={sub.page}
+                          type="button"
+                          data-ocid={`fin.${sub.page}_link`}
+                          onClick={() => onNavigate(sub.page)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg mb-0.5 text-xs transition-all duration-150 ${
+                            isActive
+                              ? "text-white font-semibold"
+                              : "text-blue-300 hover:bg-white/10 hover:text-white"
+                          }`}
+                          style={
+                            isActive
+                              ? { backgroundColor: accent, color: "#1a3a6b" }
+                              : {}
+                          }
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
+                          {sub.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* BEE Section */}
+              <div className="mb-1">
+                <button
+                  type="button"
+                  data-ocid="fin.bee.tab"
+                  onClick={() => toggleSection("BEE")}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-blue-200 hover:bg-white/10 hover:text-white"
+                  style={expandedSection === "BEE" ? { color: accent } : {}}
+                >
+                  <FileText size={18} />
+                  <span className="flex-1 text-left font-semibold">BEE</span>
+                  {expandedSection === "BEE" ? (
+                    <ChevronDown size={14} />
+                  ) : (
+                    <ChevronRight size={14} />
+                  )}
+                </button>
+                {expandedSection === "BEE" && (
+                  <div
+                    className="ml-3 mt-1 border-l-2 pl-3"
+                    style={{ borderColor: `${accent}40` }}
+                  >
+                    <div className="px-3 py-3 text-xs text-blue-400 italic">
+                      🔜 Coming Soon — BEE financial data will be available in
+                      the next release.
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* LAB Section */}
+              <div className="mb-1">
+                <button
+                  type="button"
+                  data-ocid="fin.lab.tab"
+                  onClick={() => toggleSection("LAB")}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-blue-200 hover:bg-white/10 hover:text-white"
+                  style={expandedSection === "LAB" ? { color: accent } : {}}
+                >
+                  <FlaskConical size={18} />
+                  <span className="flex-1 text-left font-semibold">LAB</span>
+                  {expandedSection === "LAB" ? (
+                    <ChevronDown size={14} />
+                  ) : (
+                    <ChevronRight size={14} />
+                  )}
+                </button>
+                {expandedSection === "LAB" && (
+                  <div
+                    className="ml-3 mt-1 border-l-2 pl-3"
+                    style={{ borderColor: `${accent}40` }}
+                  >
+                    <div className="px-3 py-3 text-xs text-blue-400 italic">
+                      🔜 Coming Soon — LAB financial data will be available in
+                      the next release.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            // Standard flat nav for all other roles
+            items.map((item) => {
+              const isActive = activePage === item.page;
+              return (
+                <button
+                  key={item.page + item.label}
+                  type="button"
+                  data-ocid={`nav.${item.page}_link`}
+                  onClick={() => onNavigate(item.page)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm transition-all duration-150 sidebar-nav-item ${
+                    isActive
+                      ? "sidebar-nav-active text-white font-semibold"
+                      : "text-blue-200 hover:bg-white/10 hover:text-white"
+                  }`}
+                  style={
+                    isActive
+                      ? { backgroundColor: accent, color: "#1a3a6b" }
+                      : {}
+                  }
+                >
+                  <span className={isActive ? "text-[#1a3a6b]" : ""}>
+                    {item.icon}
                   </span>
-                )}
-                {isActive && (
-                  <ChevronRight size={14} className="text-[#1a3a6b]" />
-                )}
-              </button>
-            );
-          })}
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.page === "assignlab" && pendingCount > 0 && (
+                    <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                      {pendingCount}
+                    </span>
+                  )}
+                  {isActive && (
+                    <ChevronRight size={14} className="text-[#1a3a6b]" />
+                  )}
+                </button>
+              );
+            })
+          )}
         </nav>
 
         {/* Logout */}

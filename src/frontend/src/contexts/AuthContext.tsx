@@ -7,7 +7,8 @@ export type UserRole =
   | "purchaser"
   | "lab"
   | "labcoordinator"
-  | "complianceofficer";
+  | "complianceofficer"
+  | "financialofficial";
 
 export interface AuthUser {
   email: string;
@@ -29,6 +30,11 @@ const demoAccounts: AuthUser[] = [
     email: "complianceofficer@bee.gov.in",
     role: "complianceofficer",
     name: "Compliance Officer",
+  },
+  {
+    email: "financial@bee.gov.in",
+    role: "financialofficial",
+    name: "Financial Official",
   },
 ];
 

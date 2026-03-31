@@ -49,7 +49,13 @@ const roleColors: Record<
     border: "#a5f3fc",
     label: "Lab Coord.",
   },
-  financial: {
+  complianceofficer: {
+    bg: "#fef2f2",
+    text: "#991b1b",
+    border: "#fecaca",
+    label: "Compliance",
+  },
+  financialofficial: {
     bg: "#fff7ed",
     text: "#9a3412",
     border: "#fed7aa",

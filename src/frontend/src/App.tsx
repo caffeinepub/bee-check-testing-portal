@@ -15,6 +15,7 @@ import IndiaMapDashboard from "./pages/director/IndiaMapDashboard";
 import LabMonitoringPage from "./pages/director/LabMonitoringPage";
 import OfficialPerformancePage from "./pages/director/OfficialPerformancePage";
 import TargetCreationPage from "./pages/director/TargetCreationPage";
+import FinancialOfficialDashboard from "./pages/financialofficial/FinancialOfficialDashboard";
 import AssignedSamplesPage from "./pages/lab/AssignedSamplesPage";
 import LabDashboard from "./pages/lab/LabDashboard";
 import LabSecondCheckPage from "./pages/lab/LabSecondCheckPage";
@@ -115,6 +116,16 @@ function AppContent() {
         default:
           return <ComplianceOfficerDashboard onNavigate={setActivePage} />;
       }
+    }
+    if (user.role === "financialofficial") {
+      return (
+        <FinancialOfficialDashboard
+          activePage={
+            activePage.startsWith("fin_") ? activePage : "fin_summary"
+          }
+          onNavigate={setActivePage}
+        />
+      );
     }
     return null;
   };
