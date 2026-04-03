@@ -74,10 +74,11 @@ export default function AssignLabPage() {
     <div>
       <div className="mb-6">
         <h2 className="text-xl font-bold" style={{ color: "#1a3a6b" }}>
-          Assign Lab to Blocked Samples
+          1st Check Test — Assign Lab (Regular Samples)
         </h2>
         <p className="text-gray-500 text-sm">
-          Assign test lab information for purchaser-blocked samples
+          Assign test lab information for regular (1st check test) blocked
+          samples
         </p>
       </div>
 

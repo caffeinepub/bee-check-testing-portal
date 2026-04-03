@@ -20,6 +20,7 @@ import AssignedSamplesPage from "./pages/lab/AssignedSamplesPage";
 import LabDashboard from "./pages/lab/LabDashboard";
 import LabSecondCheckPage from "./pages/lab/LabSecondCheckPage";
 import AssignLabPage from "./pages/labcoordinator/AssignLabPage";
+import AssignLabSecondCheckPage from "./pages/labcoordinator/AssignLabSecondCheckPage";
 import LabCoordinatorDashboard from "./pages/labcoordinator/LabCoordinatorDashboard";
 import ApprovedReportsPage from "./pages/official/ApprovedReportsPage";
 import LabResultsPage from "./pages/official/LabResultsPage";
@@ -104,7 +105,10 @@ function AppContent() {
     if (user.role === "labcoordinator") {
       switch (activePage) {
         case "assignlab":
+        case "assignlab_first":
           return <AssignLabPage />;
+        case "assignlab_second":
+          return <AssignLabSecondCheckPage />;
         default:
           return <LabCoordinatorDashboard onNavigate={setActivePage} />;
       }

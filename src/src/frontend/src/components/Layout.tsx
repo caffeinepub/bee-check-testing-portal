@@ -4,6 +4,7 @@ import {
   Bell,
   CalendarCheck,
   CheckCircle,
+  ChevronDown,
   ChevronRight,
   ClipboardList,
   Database,
@@ -24,6 +25,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useBlockedSamples } from "../contexts/BlockedSamplesContext";
 
@@ -33,10 +35,19 @@ interface LayoutProps {
   onNavigate: (page: string) => void;
 }
 
-const navItems: Record<
-  string,
-  { icon: React.ReactNode; label: string; page: string }[]
-> = {
+interface NavSubItem {
+  label: string;
+  page: string;
+}
+
+interface NavItem {
+  icon: React.ReactNode;
+  label: string;
+  page: string;
+  children?: NavSubItem[];
+}
+
+const navItems: Record<string, NavItem[]> = {
   director: [
     {
       icon: <LayoutDashboard size={18} />,
@@ -146,6 +157,10 @@ const navItems: Record<
       icon: <ClipboardList size={18} />,
       label: "Assign Lab",
       page: "assignlab",
+      children: [
+        { label: "1st Check Test", page: "assignlab" },
+        { label: "2nd Check Test", page: "assignlab2nd" },
+      ],
     },
   ],
   complianceofficer: [
@@ -194,6 +209,9 @@ export default function Layout({
 }: LayoutProps) {
   const { user, logout } = useAuth();
   const { blockedSamples } = useBlockedSamples();
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
+    assignlab: true,
+  });
 
   if (!user) return null;
   const items = navItems[user.role] || [];
@@ -205,6 +223,10 @@ export default function Layout({
       ? blockedSamples.filter((s) => !s.labAssignment).length
       : 0;
 
+  const toggleExpand = (page: string) => {
+    setExpandedMenus((prev) => ({ ...prev, [page]: !prev[page] }));
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
@@ -215,7 +237,7 @@ export default function Layout({
             "linear-gradient(180deg, #0d2252 0%, #1a3a6b 60%, #1e4080 100%)",
         }}
       >
-        {/* Logo area — full logo with baked-in text */}
+        {/* Logo area */}
         <div
           className="flex flex-col items-center px-3 py-3 border-b"
           style={{ borderColor: "rgba(200,169,81,0.3)" }}
@@ -243,35 +265,106 @@ export default function Layout({
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           {items.map((item) => {
-            const isActive = activePage === item.page;
+            const isActive =
+              activePage === item.page ||
+              (item.children?.some((c) => c.page === activePage) ?? false);
+            const isExpanded = expandedMenus[item.page] ?? false;
+            const hasChildren = !!item.children?.length;
+
             return (
-              <button
-                key={item.page + item.label}
-                type="button"
-                data-ocid={`nav.${item.page}_link`}
-                onClick={() => onNavigate(item.page)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm transition-all duration-150 sidebar-nav-item ${
-                  isActive
-                    ? "sidebar-nav-active text-white font-semibold"
-                    : "text-blue-200 hover:bg-white/10 hover:text-white"
-                }`}
-                style={
-                  isActive ? { backgroundColor: accent, color: "#1a3a6b" } : {}
-                }
-              >
-                <span className={isActive ? "text-[#1a3a6b]" : ""}>
-                  {item.icon}
-                </span>
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.page === "assignlab" && pendingCount > 0 && (
-                  <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
-                    {pendingCount}
+              <div key={item.page + item.label}>
+                <button
+                  type="button"
+                  data-ocid={`nav.${item.page}_link`}
+                  onClick={() => {
+                    if (hasChildren) {
+                      toggleExpand(item.page);
+                    } else {
+                      onNavigate(item.page);
+                    }
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm transition-all duration-150 sidebar-nav-item ${
+                    isActive && !hasChildren
+                      ? "sidebar-nav-active text-white font-semibold"
+                      : isActive && hasChildren
+                        ? "text-white font-semibold"
+                        : "text-blue-200 hover:bg-white/10 hover:text-white"
+                  }`}
+                  style={
+                    isActive && !hasChildren
+                      ? { backgroundColor: accent, color: "#1a3a6b" }
+                      : {}
+                  }
+                >
+                  <span
+                    className={isActive && !hasChildren ? "text-[#1a3a6b]" : ""}
+                  >
+                    {item.icon}
                   </span>
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.page === "assignlab" && pendingCount > 0 && (
+                    <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                      {pendingCount}
+                    </span>
+                  )}
+                  {hasChildren ? (
+                    isExpanded ? (
+                      <ChevronDown size={14} className="text-blue-300" />
+                    ) : (
+                      <ChevronRight size={14} className="text-blue-300" />
+                    )
+                  ) : isActive ? (
+                    <ChevronRight size={14} className="text-[#1a3a6b]" />
+                  ) : null}
+                </button>
+
+                {/* Sub-items */}
+                {hasChildren && isExpanded && (
+                  <div className="ml-4 mb-1">
+                    {item.children!.map((child) => {
+                      const isChildActive = activePage === child.page;
+                      return (
+                        <button
+                          key={child.page}
+                          type="button"
+                          data-ocid={`nav.${child.page}_link`}
+                          onClick={() => onNavigate(child.page)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg mb-0.5 text-xs transition-all duration-150 ${
+                            isChildActive
+                              ? "text-white font-semibold"
+                              : "text-blue-300 hover:bg-white/10 hover:text-white"
+                          }`}
+                          style={
+                            isChildActive
+                              ? { backgroundColor: accent, color: "#1a3a6b" }
+                              : {}
+                          }
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                            style={{
+                              backgroundColor: isChildActive
+                                ? "#1a3a6b"
+                                : "rgba(147,197,253,0.6)",
+                            }}
+                          />
+                          <span
+                            className={`flex-1 text-left ${isChildActive ? "text-[#1a3a6b]" : ""}`}
+                          >
+                            {child.label}
+                          </span>
+                          {isChildActive && (
+                            <ChevronRight
+                              size={12}
+                              className="text-[#1a3a6b]"
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
-                {isActive && (
-                  <ChevronRight size={14} className="text-[#1a3a6b]" />
-                )}
-              </button>
+              </div>
             );
           })}
         </nav>

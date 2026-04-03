@@ -144,11 +144,6 @@ const navItems: Record<
       label: "Dashboard",
       page: "dashboard",
     },
-    {
-      icon: <ClipboardList size={18} />,
-      label: "Assign Lab",
-      page: "assignlab",
-    },
   ],
   complianceofficer: [
     {
@@ -231,8 +226,9 @@ export default function Layout({
   onNavigate,
 }: LayoutProps) {
   const { user, logout } = useAuth();
-  const { blockedSamples } = useBlockedSamples();
+  const { blockedSamples, secondCheckLabRequests } = useBlockedSamples();
   const [expandedSection, setExpandedSection] = useState<string>("State");
+  const [assignLabExpanded, setAssignLabExpanded] = useState<boolean>(true);
 
   // Sync expandedSection when navigating via external links
   if (activePage.startsWith("bee_") && expandedSection !== "BEE") {
@@ -251,6 +247,11 @@ export default function Layout({
   const pendingCount =
     user.role === "labcoordinator"
       ? blockedSamples.filter((s) => !s.labAssignment).length
+      : 0;
+
+  const pending2ndCount =
+    user.role === "labcoordinator"
+      ? (secondCheckLabRequests || []).filter((r) => !r.labName).length
       : 0;
 
   const toggleSection = (section: string) => {
@@ -447,6 +448,125 @@ export default function Layout({
                 )}
               </div>
             </>
+          ) : user.role === "labcoordinator" ? (
+            // Special accordion nav for Lab Coordinator
+            <>
+              {/* Dashboard link */}
+              <button
+                type="button"
+                data-ocid="nav.dashboard_link"
+                onClick={() => onNavigate("dashboard")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm transition-all duration-150 ${
+                  activePage === "dashboard"
+                    ? "sidebar-nav-active text-white font-semibold"
+                    : "text-blue-200 hover:bg-white/10 hover:text-white"
+                }`}
+                style={
+                  activePage === "dashboard"
+                    ? { backgroundColor: accent, color: "#1a3a6b" }
+                    : {}
+                }
+              >
+                <span
+                  className={activePage === "dashboard" ? "text-[#1a3a6b]" : ""}
+                >
+                  <LayoutDashboard size={18} />
+                </span>
+                <span className="flex-1 text-left">Dashboard</span>
+                {activePage === "dashboard" && (
+                  <ChevronRight size={14} className="text-[#1a3a6b]" />
+                )}
+              </button>
+
+              {/* Assign Lab accordion */}
+              <div className="mb-1">
+                <button
+                  type="button"
+                  data-ocid="nav.assignlab.accordion"
+                  onClick={() => setAssignLabExpanded((p) => !p)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 ${
+                    activePage === "assignlab_first" ||
+                    activePage === "assignlab_second"
+                      ? "text-white"
+                      : "text-blue-200 hover:bg-white/10 hover:text-white"
+                  }`}
+                  style={
+                    activePage === "assignlab_first" ||
+                    activePage === "assignlab_second"
+                      ? { color: accent }
+                      : {}
+                  }
+                >
+                  <ClipboardList size={18} />
+                  <span className="flex-1 text-left">Assign Lab</span>
+                  {pendingCount + pending2ndCount > 0 && (
+                    <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                      {pendingCount + pending2ndCount}
+                    </span>
+                  )}
+                  {assignLabExpanded ? (
+                    <ChevronDown size={14} />
+                  ) : (
+                    <ChevronRight size={14} />
+                  )}
+                </button>
+                {assignLabExpanded && (
+                  <div
+                    className="ml-3 mt-1 border-l-2 pl-3"
+                    style={{ borderColor: `${accent}40` }}
+                  >
+                    {/* 1st Check Test sub-item */}
+                    <button
+                      type="button"
+                      data-ocid="nav.assignlab_first_link"
+                      onClick={() => onNavigate("assignlab_first")}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg mb-0.5 text-xs transition-all duration-150 ${
+                        activePage === "assignlab_first"
+                          ? "text-white font-semibold"
+                          : "text-blue-300 hover:bg-white/10 hover:text-white"
+                      }`}
+                      style={
+                        activePage === "assignlab_first"
+                          ? { backgroundColor: accent, color: "#1a3a6b" }
+                          : {}
+                      }
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
+                      1st Check Test
+                      {pendingCount > 0 && (
+                        <span className="ml-auto text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                          {pendingCount}
+                        </span>
+                      )}
+                    </button>
+                    {/* 2nd Check Test sub-item */}
+                    <button
+                      type="button"
+                      data-ocid="nav.assignlab_second_link"
+                      onClick={() => onNavigate("assignlab_second")}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg mb-0.5 text-xs transition-all duration-150 ${
+                        activePage === "assignlab_second"
+                          ? "text-white font-semibold"
+                          : "text-blue-300 hover:bg-white/10 hover:text-white"
+                      }`}
+                      style={
+                        activePage === "assignlab_second"
+                          ? { backgroundColor: accent, color: "#1a3a6b" }
+                          : {}
+                      }
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
+                      2nd Check Test
+                      {pending2ndCount > 0 && (
+                        <span className="ml-auto text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                          {pending2ndCount}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             // Standard flat nav for all other roles
             items.map((item) => {
@@ -472,11 +592,6 @@ export default function Layout({
                     {item.icon}
                   </span>
                   <span className="flex-1 text-left">{item.label}</span>
-                  {item.page === "assignlab" && pendingCount > 0 && (
-                    <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold">
-                      {pendingCount}
-                    </span>
-                  )}
                   {isActive && (
                     <ChevronRight size={14} className="text-[#1a3a6b]" />
                   )}
