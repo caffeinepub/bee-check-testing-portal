@@ -75,6 +75,7 @@ interface SecondCheckContextType {
   failedCases: FailedCase[];
   secondCheckInitiated: boolean;
   initiateSecondCheck: () => void;
+  initiateSecondCheckSelected: (caseIds: string[]) => void;
   secondCheckRequests: FailedCase[];
   secondCheckSamples: SecondCheckSample[];
   /** Block a single sample (1 or 2) independently */
@@ -174,6 +175,21 @@ export function SecondCheckProvider({
     setSecondCheckInitiated(true);
     setSecondCheckRequests(failedCases);
     setFailedCases((prev) => prev.map((c) => ({ ...c, dispatched: true })));
+  };
+
+  const initiateSecondCheckSelected = (caseIds: string[]) => {
+    const selected = failedCases.filter((c) => caseIds.includes(c.id));
+    setSecondCheckInitiated(true);
+    setSecondCheckRequests((prev) => {
+      const existingIds = new Set(prev.map((c) => c.id));
+      const newOnes = selected.filter((c) => !existingIds.has(c.id));
+      return [...prev, ...newOnes];
+    });
+    setFailedCases((prev) =>
+      prev.map((c) =>
+        caseIds.includes(c.id) ? { ...c, dispatched: true } : c,
+      ),
+    );
   };
 
   /** Block a single sample independently. Creates the parent record if needed. */
@@ -481,6 +497,7 @@ export function SecondCheckProvider({
         failedCases,
         secondCheckInitiated,
         initiateSecondCheck,
+        initiateSecondCheckSelected,
         secondCheckRequests,
         secondCheckSamples,
         submitSingleSampleBlock,

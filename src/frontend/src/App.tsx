@@ -6,7 +6,9 @@ import { BlockedSamplesProvider } from "./contexts/BlockedSamplesContext";
 import { SecondCheckProvider } from "./contexts/SecondCheckContext";
 import LoginPage from "./pages/LoginPage";
 import ComplianceOfficerDashboard from "./pages/complianceofficer/ComplianceOfficerDashboard";
+import FailedCasesPage from "./pages/complianceofficer/FailedCasesPage";
 import SchedulingApprovalsPage from "./pages/complianceofficer/SchedulingApprovalsPage";
+import SecondCheckInitiationPage from "./pages/complianceofficer/SecondCheckInitiationPage";
 import ApplianceDataPage from "./pages/director/ApplianceDataPage";
 import DirectorDashboard from "./pages/director/DirectorDashboard";
 import DirectorTestingPage from "./pages/director/DirectorTestingPage";
@@ -115,6 +117,10 @@ function AppContent() {
     }
     if (user.role === "complianceofficer") {
       switch (activePage) {
+        case "failedcases":
+          return <FailedCasesPage />;
+        case "initiation":
+          return <SecondCheckInitiationPage />;
         case "scheduling":
           return <SchedulingApprovalsPage />;
         default:

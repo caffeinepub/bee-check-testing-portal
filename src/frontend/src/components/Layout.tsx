@@ -17,6 +17,7 @@ import {
   Lock,
   LogOut,
   Map as MapIcon,
+  PlayCircle,
   RotateCcw,
   Search,
   ShoppingCart,
@@ -154,7 +155,12 @@ const navItems: Record<
     {
       icon: <AlertTriangle size={18} />,
       label: "Failed Cases",
-      page: "dashboard",
+      page: "failedcases",
+    },
+    {
+      icon: <PlayCircle size={18} />,
+      label: "2nd Check Test Initiation",
+      page: "initiation",
     },
     {
       icon: <CalendarCheck size={18} />,

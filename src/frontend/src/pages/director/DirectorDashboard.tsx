@@ -1,23 +1,16 @@
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertTriangle,
   ArrowRight,
-  BarChart3,
   CheckCircle,
   Clock,
-  DollarSign,
   FileText,
-  Map as MapIcon,
   Package,
   ShoppingCart,
-  Star,
   Target,
   TestTube,
-  TestTube2,
   TrendingDown,
   TrendingUp,
-  Users,
   XCircle,
 } from "lucide-react";
 import {
@@ -133,114 +126,6 @@ const pieData = [
   { name: "Not Fit", value: 4, color: "#9ca3af" },
 ];
 
-const quickNavLinks = [
-  {
-    page: "appliance",
-    label: "Appliance Monitoring",
-    desc: "Track products & blocking status",
-    icon: Package,
-    color: "#d97706",
-    bg: "#fffbeb",
-    border: "#fde68a",
-  },
-  {
-    page: "lab",
-    label: "Lab Monitoring",
-    desc: "Test results & lab reports",
-    icon: TestTube,
-    color: "#7c3aed",
-    bg: "#f5f3ff",
-    border: "#ddd6fe",
-  },
-  {
-    page: "financial",
-    label: "Financial Monitoring",
-    desc: "Fund allocation & tracking",
-    icon: DollarSign,
-    color: "#059669",
-    bg: "#ecfdf5",
-    border: "#a7f3d0",
-  },
-  {
-    page: "performance",
-    label: "Official Performance",
-    desc: "Officer activity & KPIs",
-    icon: Users,
-    color: "#0284c7",
-    bg: "#f0f9ff",
-    border: "#bae6fd",
-  },
-  {
-    page: "targets",
-    label: "Target Creation",
-    desc: "Assign & manage targets",
-    icon: Target,
-    color: "#1a3a6b",
-    bg: "#eff6ff",
-    border: "#bfdbfe",
-  },
-  {
-    page: "testing",
-    label: "Testing Module",
-    desc: "Director Final Review",
-    icon: TestTube2,
-    color: "#0f766e",
-    bg: "#f0fdfa",
-    border: "#99f6e4",
-  },
-  {
-    page: "mapDashboard",
-    label: "India Map",
-    desc: "State-wise compliance map",
-    icon: MapIcon,
-    color: "#4f46e5",
-    bg: "#eef2ff",
-    border: "#c7d2fe",
-  },
-  {
-    page: "reports",
-    label: "Reports & Export",
-    desc: "Download PDF/Excel data",
-    icon: BarChart3,
-    color: "#db2777",
-    bg: "#fdf2f8",
-    border: "#fbcfe8",
-  },
-];
-
-const recentActivity = [
-  {
-    text: "Samsung AC test report approved by Rahul Sharma",
-    time: "2 hours ago",
-    type: "approved",
-    user: "Rahul Sharma",
-  },
-  {
-    text: "New target created for Maharashtra SDA region",
-    time: "5 hours ago",
-    type: "new",
-    user: "Priya Mehta",
-  },
-  {
-    text: "Whirlpool Refrigerator test scheduled at NABL Lab",
-    time: "1 day ago",
-    type: "new",
-    user: "Vikram Nair",
-  },
-  {
-    text: "LG Washing Machine report reverted to lab for correction",
-    time: "2 days ago",
-    type: "reverted",
-    user: "Anita Desai",
-  },
-  {
-    text: "Blue Star AC failed BEE compliance check (Star Rating)",
-    time: "3 days ago",
-    type: "rejected",
-    user: "System",
-  },
-];
-
 // 2nd Check Test data
 const secondCheckKpis = [
   {
@@ -295,20 +180,6 @@ function TrendBadge({ current, prev }: { current: number; prev: number }) {
     </div>
   );
 }
-
-const activityColors: Record<string, string> = {
-  approved: "#059669",
-  rejected: "#dc2626",
-  reverted: "#d97706",
-  new: "#0284c7",
-};
-
-const activityBadgeStyle: Record<string, { label: string; cls: string }> = {
-  approved: { label: "Approved", cls: "bg-emerald-100 text-emerald-800" },
-  rejected: { label: "Rejected", cls: "bg-red-100 text-red-800" },
-  reverted: { label: "Reverted", cls: "bg-amber-100 text-amber-800" },
-  new: { label: "New", cls: "bg-blue-100 text-blue-800" },
-};
 
 export default function DirectorDashboard({ onNavigate }: Props) {
   return (
@@ -678,130 +549,6 @@ export default function DirectorDashboard({ onNavigate }: Props) {
               >
                 View Details <ArrowRight size={12} />
               </button>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Quick Nav + Activity */}
-      <section
-        className="grid grid-cols-1 lg:grid-cols-5 gap-4"
-        data-ocid="director.bottom.section"
-      >
-        <Card
-          className="border-0 lg:col-span-3"
-          style={{ boxShadow: "0 2px 12px rgba(26,58,107,0.08)" }}
-        >
-          <CardHeader className="pb-2 pt-5">
-            <CardTitle
-              className="text-sm font-bold"
-              style={{ color: "#1a3a6b" }}
-            >
-              Quick Navigation
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0 pb-5">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {quickNavLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <button
-                    type="button"
-                    key={link.page}
-                    data-ocid={`director.${link.page}.link`}
-                    onClick={() => onNavigate(link.page)}
-                    className="text-left p-4 rounded-xl border transition-all duration-150 group hover:shadow-md bee-card-hover"
-                    style={{
-                      backgroundColor: link.bg,
-                      borderColor: link.border,
-                    }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
-                      style={{ backgroundColor: `${link.color}18` }}
-                    >
-                      <Icon size={18} style={{ color: link.color }} />
-                    </div>
-                    <p className="text-xs font-bold text-gray-800 leading-tight mb-1">
-                      {link.label}
-                    </p>
-                    <p className="text-xs text-gray-500 leading-tight mb-2">
-                      {link.desc}
-                    </p>
-                    <div
-                      className="flex items-center gap-1"
-                      style={{ color: link.color }}
-                    >
-                      <span className="text-xs font-semibold">Open</span>
-                      <ArrowRight
-                        size={11}
-                        className="group-hover:translate-x-0.5 transition-transform"
-                      />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card
-          className="border-0 lg:col-span-2"
-          style={{ boxShadow: "0 2px 12px rgba(26,58,107,0.08)" }}
-        >
-          <CardHeader className="pb-2 pt-5">
-            <div className="flex items-center justify-between">
-              <CardTitle
-                className="text-sm font-bold"
-                style={{ color: "#1a3a6b" }}
-              >
-                Recent Activity
-              </CardTitle>
-              <Badge
-                variant="outline"
-                className="text-xs border-emerald-200 text-emerald-700"
-              >
-                <Star size={9} className="mr-1" /> Live
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0 pb-5">
-            <div className="relative activity-timeline">
-              {recentActivity.map((item, idx) => {
-                const badge =
-                  activityBadgeStyle[item.type] ?? activityBadgeStyle.new;
-                const dotColor = activityColors[item.type] ?? "#0284c7";
-                return (
-                  <div
-                    key={item.text}
-                    data-ocid={`director.activity.item.${idx + 1}`}
-                    className="flex items-start gap-3 pb-4 relative"
-                  >
-                    <div
-                      className="w-4 h-4 rounded-full flex-shrink-0 mt-0.5 ring-2 ring-white z-10"
-                      style={{ backgroundColor: dotColor }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-700 leading-snug font-medium mb-1">
-                        {item.text}
-                      </p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-semibold ${badge.cls}`}
-                        >
-                          {badge.label}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {item.time}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          · {item.user}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </CardContent>
         </Card>
