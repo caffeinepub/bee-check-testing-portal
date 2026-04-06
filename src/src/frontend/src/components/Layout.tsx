@@ -72,7 +72,11 @@ const navItems: Record<string, NavItem[]> = {
     },
     { icon: <Target size={18} />, label: "Target Creation", page: "targets" },
     { icon: <TestTube2 size={18} />, label: "Testing Module", page: "testing" },
-    { icon: <MapIcon size={18} />, label: "India Map", page: "mapDashboard" },
+    {
+      icon: <MapIcon size={18} />,
+      label: "Compliance Map",
+      page: "mapDashboard",
+    },
   ],
   official: [
     {

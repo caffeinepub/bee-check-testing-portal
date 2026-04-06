@@ -189,7 +189,7 @@ const quickNavLinks = [
   },
   {
     page: "mapDashboard",
-    label: "India Map",
+    label: "Compliance Map",
     desc: "State-wise compliance map",
     icon: MapIcon,
     color: "#4f46e5",
